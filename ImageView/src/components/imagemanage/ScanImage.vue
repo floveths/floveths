@@ -1,0 +1,699 @@
+<template>
+    
+    <div id="scan">
+
+        <el-container>
+            <el-header class="scanHead">
+                <div class="headLeft">
+                    <ul>
+                        <li><img src="../../../public/static/logo.png" ></li>
+                        <li>
+                            <el-select v-model="deviceValue" size="mini" placeholder="请选择">
+                                <el-option v-for="item in deviceOptions" :key="item.value" 
+                                :label="item.label" :value="item.value"> </el-option>
+                            </el-select> 
+                        </li>
+                        <li>
+                            <el-select v-model="pageOp" size="mini" placeholder="请选择">
+                                <el-option v-for="item in pageOptions" :key="item.value"
+                                :label="item.label" :value="item.value"> </el-option>
+                            </el-select> 
+                        </li>
+                        <li>
+                            <el-tag style="height:28.5px;" effect="dark" type="success" >共 &nbsp;{{$store.state.imgTotalCount}} &nbsp; 张影像</el-tag>
+                        </li>
+                        <li>
+                            <el-button type="primary" v-on:click="scanBtn" size="mini"><i class="el-icon-printer"></i> {{$t('l.scan')}}</el-button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="headRight">
+                    
+                    <ul>
+                        <li>
+                            <input type="file" id="importFile" multiple="multiple" ref="inputFile" @change="reSizePic" style="display: none;" />
+                            <el-button type="primary" v-on:click="importBtn" size="mini"><i class="el-icon-download"></i>&nbsp;本地导入</el-button>
+                        </li>
+                        <li>
+                            <div class="smallcode" v-show="showSmallCode" ><img src="../../../public/static/logo.png" /></div>
+                            <el-button type="primary" @mouseenter.native="showSmallCode=true" @click="$store.commit('showAppFolder','true')" @mouseleave.native="showSmallCode=false" size="mini">
+                               <i class="el-icon-picture"></i> 我的影像</el-button>
+                        </li>
+                        
+                        <li>
+                            <el-button type="danger" v-on:click="delImg" size="mini"><i class="el-icon-delete"></i>&nbsp;删除</el-button>
+						</li>
+                        <li>
+                            <el-button type="success" v-on:click="saveImg" size="mini"><i class="el-icon-receiving"></i>&nbsp;保存</el-button>
+                        </li>
+                        <li>
+                            <el-dropdown  >
+                                <el-button type="primary" size="mini">
+                                    <i class="el-icon-setting"></i>
+                                    设置<i class="el-icon-arrow-down el-icon--right"></i>
+                                </el-button>
+                                <el-dropdown-menu slot="dropdown">
+                                    <div class="dropItem">显示附件上传  <el-switch v-model="showFileUpBar" size="mini" active-color="rgb(64, 158, 255)" inactive-color="#ff4949"> </el-switch></div>
+                                    <div class="dropItem">显示附件列表  <el-switch v-model="showFileListBar" active-color="rgb(64, 158, 255)" inactive-color="#ff4949"> </el-switch></div>
+                                    <div class="dropItem">显示影像矫正  <el-switch v-model="showCorrectImg" active-color="rgb(64, 158, 255)" inactive-color="#ff4949"> </el-switch></div>
+                                </el-dropdown-menu>
+                            </el-dropdown>
+
+                            <!-- <el-button type="primary" v-on:click="commitImg" size="mini"><i class="el-icon-receiving"></i>&nbsp;提交</el-button> -->
+                        </li>
+                        <li  v-bind:id="moveBar" >
+                            <div class="menuBar" v-on:click="showMenuBar"></div>
+                            <div class="ullist" v-show="showBar">
+                                <ul >
+                                    <li class="barLi" v-if="showCorrectImg">
+                                        <el-button type="info" v-on:click="revertImg" size="mini"><i class="el-icon-refresh"></i>&nbsp;影像矫正</el-button>
+                                    </li>
+                                    <li class="barLi" v-if="showFileUpBar">
+                                        <el-button type="success" v-on:click="$store.commit('showFileUpload')" size="mini"><i class="el-icon-message"></i>&nbsp;附件上传</el-button>
+                                    </li>
+                                    <li class="barLi">
+                                        <el-select v-model="lang" size="mini" @change="changeLang" placeholder="请选择">
+                                            <el-option v-for="item in langOptions" :key="item.value"
+                                                :label="item.label" :value="item.value">
+                                            </el-option>
+                                        </el-select>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+
+                </div>
+
+            </el-header>
+            <el-container>
+                <el-aside v-bind:style="leftAsideWidth" class="scanAside"> 
+                    
+                    <div class="asideLeftContent">
+
+                        <div class="content">
+                            <scantree :showfilelistBar="showFileListBar"></scantree>
+                        </div>
+                        <div class="contentBar" @click="showAside('left')">
+                            <i class="el-icon-arrow-right"></i>
+                        </div>
+                    </div>
+                </el-aside>
+
+                <!--画图区域-->
+                <el-main class="scanMain">
+
+                    <imgtemp-component :data='imgData' @showBigImg="showBigImage"></imgtemp-component>
+
+                </el-main>
+
+                <el-aside v-bind:style="rightAsideWidth" class="scanAside">
+                    <div class="asideRightContent">
+                        <div class="contentBar" @click="showAside('right')">
+                            <i class="el-icon-arrow-left"></i>
+                        </div>
+                        <div class="content">
+
+                            <filelistview @fileview="viewPdfDoc"></filelistview>
+
+                        </div>
+                        
+                    </div>
+                </el-aside>
+            </el-container>
+        </el-container>
+
+        <transition name="up">
+            <smallappfolder v-show="$store.state.showAppFolder" @showAppPoolView="showAppPool=true"></smallappfolder>
+        </transition>
+        <transition name="up">    
+            <smallapppool v-if="showAppPool" @closeAppPool="closeAppImagePool" @showAppBigImg="showAppPoolImage"></smallapppool>
+        </transition>
+        <transition name="up">    
+            <fileupload v-show="$store.state.showFileUpload"></fileupload>
+        </transition>
+        <transition>
+            <initstateprogress v-show="showInitImgProgress" @closeinitprogress="showInitImgProgress=false"></initstateprogress>
+        </transition>
+        <transition name="up">
+            <pdfdocview v-show="showPdfBox" :pdfurl="pdfUrl" @closepdfbox='showPdfBox=false'></pdfdocview>
+        </transition>
+        <transition name="up">
+            <correctimage v-show="showRotateProgressBar" :closemodel="showRotateModel" :isfull="isCorrect" :rotatevalue="rotateValue"></correctimage>
+        </transition>
+        <transition name="up">        
+            <uploadprogressbar v-show="$store.state.showImageUpload" :uploadimgcount="uploadImgCount"></uploadprogressbar>
+        </transition>
+        <transition name="up">
+            <imagedialog :imgSrc="bigImgUrl" v-show="isShowBigImg" @closeModel="closeDialogModel" :appPoolData="appListData" :showBar="showOprationBar" :ticketId="ticketId" ></imagedialog>
+        </transition>
+    </div>
+
+</template>
+
+<script>
+/* import $ from 'jquery' */
+import par from '../../utils/param'
+import util from '../../utils/util'
+import '../../assets/css/ztree.css'
+import scanTree from '../pubcomponent/treemanage/ScanTree'
+import correctImage from '../pubcomponent/imagebox/CorrectImage'
+import PdfDocView from '../pubcomponent/pdfdocdialog/PdfDocBox'
+import imageDialog from '../pubcomponent/imagedialog/ImgeModelDialog'
+import InitStateProgress from '../pubcomponent/imagebox/InitStateProgress'
+import imagecomponent from '../../components/pubcomponent/imagebox/ImageComponent'
+import filelistview from '../../components/pubcomponent/filemanage/FileView'
+import smallappfolder from '../../components/pubcomponent/smallappfolder/AppFolder'
+import fileupload from '../../components/pubcomponent/fileupload/FileUploadTemp'
+import smallapppool from '../../components/pubcomponent/smallappfolder/smallapppool/AppPool'
+import uploadprogressbar from '../../components/pubcomponent/imageuploadbar/UploadProgressBar'
+
+
+export default {
+    data(){
+        return {
+            'langOptions' : '',
+            'showFileUpBar' : true,
+            'showCorrectImg' : true,
+            'showFileListBar' : true,
+            'showAppPool' : false,
+
+            'lang' : '',
+            'showBar' : false,
+            'moveBar' : '',
+            'imgData' : [],
+            'ticketId' : '',
+            'isSave' : 0,//初始化未上传
+            'pageOp' : '',
+            'pdfUrl' : '',
+            'appListData' : [],
+            'isCorrect' : false,
+            'rotateValue' : 1,
+            'bigImgUrl' : null,
+            'deviceValue' : '',
+            'showPdfBox' : false,
+            'uploadImgCount' : 0,
+            'isShowBigImg' : false,
+            'showOprationBar' : true,
+            'showInitImgProgress' : false,
+            'deviceOptions' : par.deviceOptions,
+            'pageOptions' : [{'label':'单面','value':'1'},{'label':'双面','value':'2'}],
+            'showSmallCode' : false,
+            'leftAsideWidth' : {"width":'30px'},
+            'rightAsideWidth' : {"width":'30px'},
+            'showLeftContent' : false,
+            'showRightContent' : false,
+            'showRotateProgressBar' : false
+  
+        }
+    },
+    components : {
+        'scantree' : scanTree,
+        'fileupload' : fileupload,
+        'pdfdocview' : PdfDocView,
+        'imagedialog' : imageDialog,
+        'filelistview' : filelistview,
+        'correctimage' : correctImage,
+        'smallapppool' : smallapppool,
+        'smallappfolder' : smallappfolder,
+        'imgtemp-component' : imagecomponent,
+        'initstateprogress' : InitStateProgress,
+        'uploadprogressbar' : uploadprogressbar
+    },
+    beforeMount : function(){
+        this.lang = this.$store.state.defaultLang;
+        this.langOptions = this.$store.state.langOptions;
+        
+
+       /*  util.getRequest('/imageUploadServices/',(res)=>{
+
+            window.console.log(res);
+            
+            if(res.body.status=="200"||res.body.status==200){
+                par.batchId.push(res.body.data.batchId);
+                par.businessSerialNo = res.body.data.businessSerialNo;
+                
+                par.imgData = par.imgData.concat(res.body.data.tree);
+                par.fileData = par.fileData.concat(res.body.data.files);
+                par.ticketNodes[0].children = par.ticketNodes[0].children.concat(par.imgData);
+
+                $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+                par.fileNodes[0].children = par.fileNodes[0].children.concat(par.fileData);
+                $.fn.zTree.init($("#fileDemo"), par.setting, par.fileNodes);
+
+            }else{
+                util.getRequest('/imageUploadServices/batchId',(res)=>{
+                    if(res.body.status==200){
+                        par.batchId.push(res.body.data.batchId);
+                    }else{
+                        util.showModelTip("warning","获取批次号失败!");
+                        return false;
+                    }
+                })
+            }
+        }); */
+       
+    },
+    mounted : function(){
+
+        util.initWS();
+        util.initTreeNode();
+
+    },
+    methods:{
+        changeLang (lang){
+            this.$i18n.locale = lang;
+            this.$store.commit('changeLanguage',lang);
+        },
+        showMenuBar : function(){
+            this.showBar = !this.showBar;
+            if(this.showBar==true){
+                this.moveBar = 'outBar';
+                
+                window.setTimeout(()=>{
+                    var barLi = document.getElementsByClassName('barLi').length;
+                    var outBar = document.getElementById(this.moveBar);
+                    outBar.style.transition ='all 0.4s linear';
+                    outBar.style.transform ='translateX(-'+(barLi*135)+'px)';
+                },50);
+            }else{
+                this.moveBar = 'inBar';
+                window.setTimeout(()=>{
+                    var inBar = document.getElementById(this.moveBar);
+                    inBar.style.transition ='all 0.4s linear';
+                    inBar.style.transform ='translateX(0px)';
+                },50);
+            }
+        },
+        scanBtn(){
+
+            if(this.deviceValue==""||this.deviceValue==null){
+                util.showModelTip('warning','请先选择扫描仪!');
+				return false;
+			}
+			var obj = {"InterFace": "Scan","DeviceName": this.deviceValue,'ControlEncryption' : 0,'DoubleSide': parseInt(this.dviceOptions),'DPI': 300,'ShowUI': 0,'ShowProcess': 0,'Rote': 360,'Color': 3,'Ocr': parseInt(par.ocrPort),'Ip': par.serverIp.toString(),'Port': parseInt(par.serverPort),'SocketPort': parseInt(par.socketPort),'Type': parseInt(1)};
+            this.isSave = 0;//重新初始化未保存
+            par.ws.send(JSON.stringify(obj));
+        },
+        importBtn(){
+            document.getElementById('importFile').click();
+        },
+        reSizePic (){
+            var inputFile = this.$refs.inputFile;
+            let len = inputFile.files.length;
+
+            this.showInitImgProgress = true;
+            let _this = this;
+            for(let i=0;i<len;i++){
+                let f = inputFile.files[i];
+
+                let fileSize = util.getFileSize(f.size);
+                let name = f.name;
+                 name = name.substring(name.lastIndexOf('.'),name.length);
+                if(name!='.jpg'&&name!='.png'&&name!='bmp'&&name!='tif'&&name!='gif'&&name!='pcx'&&name!='tga'&&name!='exif'&&name!='fpx'&&name!='webp'){
+                    par.uploadFileArr.push({'fileObj':f,'fileName':f.name,'fileSize':fileSize});
+                }else{
+                    par.uploadImgCount++;
+                    let src = window.URL.createObjectURL(f);
+                    let dataURL = null;
+                    let img = new Image();
+                    img.src = src;
+                    img.onload = function(){
+                        let canvas = document.createElement("canvas");
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        let ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, img.width, img.height);
+                        dataURL = canvas.toDataURL("image/jpeg");
+
+                        window.console.log(par.nodeId);
+                        let fielId = util.getFielId();
+                        let fileName = util.getFileName();
+                        let index = util.addTypeNum(par.nodeId);
+
+                        var base64 = dataURL.replace("data:image/jpeg;base64,", "");
+                        var objmsg = {
+                            InterFace: "Transmission_WebToLocal",
+                            FileId: fielId,
+                            FileName: fileName,
+                            Base64: base64
+                        };
+                        par.ws.send(JSON.stringify(objmsg));
+
+                        par.curImgIndex++;
+                        let imgId = par.nodeId+''+par.imgData[index].typeNum;
+                        let child = {'id': imgId,'name':fileName,'imageSrc':dataURL,'fielId':fielId,'imgName':fileName,'isUpload':false,'curImgIndex':par.curImgIndex,'imgTip':'','sliceTip':'','show':false,'fileSize':fileSize};
+                        
+                        par.uploadImageArr.push(child);//存放要上传的图片 上传使用
+                        par.imgData[index].children.push(child); //树
+
+                        par.imgTotalArr.push({'imageSrc':dataURL,'imgFielId':fielId,'isUpload':false});//存储图片 查看大图时使用
+                        //par.ticketNodes[0].children = par.imgData;
+                        par.ticketNodes[0].children[index] = par.imgData[index];
+                        //$.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+                        _this.$store.commit('changeImgCount','+');
+                    }
+                }
+                
+            }
+
+            util.reloadTree();
+            this.reloadData();
+            this.$store.state.initImportCount = par.uploadImgCount;
+            util.uploadFiles(par.uploadFileArr);
+        },
+        reloadData(){
+            this.imgData = par.imgData;
+        },
+        delImg(){
+
+            let delArr = par.pickImage;
+            if(delArr.length<=0){
+                util.showModelTip('warning','请先选择要删除的影像!');
+                return false;
+            }
+            
+            let parm = {"businessSerialNo": par.businessSerialNo,"fileId":delArr};
+            util.deleteRequest("/imageUploadServices",{body:parm});  
+        },
+        revertImg(){
+
+            let delArr = par.pickImage;
+            if(delArr.length<=0){
+                util.showModelTip('warning','请先选择要矫正的影像!');
+                return false;
+            }else if(delArr.length > 1){
+                util.showModelTip('warning','请选择一张要矫正的影像!');
+                return false;
+            }
+
+            let imgSrc = null;
+            par.imgTotalArr.find((k)=>{
+                if(k.imgFielId == delArr[0]){
+                    imgSrc = k.imageSrc;
+                } 
+            })
+
+            this.appListData = [];
+            this.ticketId = delArr[0];
+            this.bigImgUrl = imgSrc;
+            this.isShowBigImg = true;
+
+        },
+        showBigImage(msg){
+            this.bigImgUrl = msg.url;
+            this.ticketId = msg.fileId;
+            this.appListData = [];
+            this.showOprationBar = true;
+			this.isShowBigImg = true;
+        },
+        showAppPoolImage(msg){
+            this.bigImgUrl = msg.url;
+            this.appListData = msg.appPoolData;
+            this.showOprationBar = true;
+			this.isShowBigImg = true;
+        },
+        closeAppImagePool(){
+            this.reloadData();
+            this.showAppPool = false;
+        },
+        closeDialogModel(msg){
+            let isRotate = msg.rotate;
+            par.pickImage = [];
+            this.isShowBigImg = msg.close;
+
+            if(!isRotate){
+
+                this.isShowBigImg = msg.close;
+                
+                par.pickImage = [];
+
+                let fileId = msg.fileId;
+                let isUpload;
+                par.imgTotalArr.find((k)=>{
+                    if(k.imgFielId == fileId){
+                        isUpload = k.isUpload
+                        return;
+                    }
+                });
+
+                let interVal = null;
+                this.showRotateProgressBar = true;
+
+                let count = 10;
+                interVal = window.setInterval(()=>{
+
+                    let m = Math.random().toFixed(0,2)
+                    count+=(count*(m*2));
+                    if(parseInt(count) >= 45){
+                        window.clearInterval(interVal);
+                    }else if(parseInt(count) >= 100){
+                        window.clearInterval(interVal);
+                    }
+                    this.rotateValue = count;
+                
+                },800);
+
+                if(isUpload!=true){
+
+                    util.correctBase64Img(this.bigImgUrl,par.rotatez,(res)=>{
+                        window.console.log(res);
+                    });
+                    
+                }else{
+                    util.postRequest(`/imageServices/updateDegree/${fileId}/${par.rotatez}`,{},(res)=>{
+                        window.console.log(res);
+                    })
+                }
+                this.showRotateModel();
+            }
+            
+		},
+        saveImg(){
+
+            var count = par.uploadImgCount;
+            if(count <= 0){
+				util.showModelTip('warning','暂无可上传影像!');
+				return false;
+            }
+            
+            let uploadImages= [];
+            let tickArr = par.uploadImageArr;
+            
+            for(let o=0;o<tickArr.length;o++){
+                var str ={"BatchId":par.batchId[0],"FileId":tickArr[o].fielId,"BusinessSerialNo":par.businessSerialNo,"FileName":tickArr[o].imgName,"Base64":''};
+                uploadImages.push(str);
+            }
+            
+            var objmsg = {InterFace: "Upload",Ip: par.serverIp.toString(),Port: parseInt(par.serverPort),SocketPort: parseInt(par.socketPort),Type: parseInt(1),files: uploadImages}
+            par.ws.send(JSON.stringify(objmsg));
+
+            this.$store.commit('showImageUpload');
+            this.$store.commit('changeUploadImgCount',count);
+        },
+        viewPdfDoc(val){
+            this.pdfUrl = val;
+            this.showPdfBox = true;
+        },
+        showAside(par){
+            if(par=='left'){
+                this.showLeftContent =! this.showLeftContent; 
+                if(this.showLeftContent){
+                    this.leftAsideWidth = {"transition":"all .3s linear","width":"300px"};
+                }else{
+                    this.leftAsideWidth = {"transition":"all .3s linear","width":"30px"};
+                }
+                
+            }else if(par=='right'){
+                this.showRightContent =! this.showRightContent; 
+                if(this.showRightContent){
+                    this.rightAsideWidth = {"transition":"all .3s linear","width":"300px"};
+                }else{
+                    this.rightAsideWidth = {"transition":"all .3s linear","width":"30px"};
+                }
+                
+            }
+        },
+        showRotateModel(){
+            this.showRotateProgressBar == true?false:true;
+        }
+    }
+}
+</script>
+<style lang="less" >
+
+*{
+    margin: 0px;
+    padding: 0px;
+}
+
+.up-enter,.up-leave-to{
+	opacity: 0;
+	transition: all 0.2s linear;
+}
+
+.up-enter-active,.up-leave-active{
+	transition: opacity 0.5s linear;
+}
+
+.dropItem{
+    color: #333;
+    margin: 5px !important;
+    font-size: 8pt !important;
+}
+
+.scanHead {
+    background-color: rgb(255, 255, 255);
+    color: #333;
+    position: fixed;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    padding: 0px 65px;
+    height: 50px !important;
+    justify-content: space-between;
+    box-shadow: 0 1px 4px 0 rgba(0,21,41,.08);
+
+    .headLeft,.headRight{
+        margin: 5px 0px;
+        box-sizing: border-box;
+        ul{
+            overflow: hidden;
+            list-style: none;
+            display: inline-flex;
+            li{
+                margin:  5px;
+            }
+            li img{
+                width: 135px;
+            }
+        }
+        
+    }
+    .headRight > li:nth-last-child(1){
+        display: flex;
+        position: relative;
+        justify-content: center;
+        align-content: center;
+        align-items: center;
+    }
+    .smallcode{
+        padding: 10px;
+        position: absolute;
+        top: 55px;
+        width: 145px;
+        z-index: 999;
+        box-sizing: border-box;
+        height: 145px;
+        border-radius: 4px;
+        background: white;
+        box-shadow: 2px 5px 8px #eaeaea;
+        img{
+            width: 100% !important;
+        }
+    }
+    .smallcode::after{
+        content: '';
+        border: 1px solid ;
+        position: absolute;
+        top: -18px;
+        left: 15%;
+        position: absolute;
+        border-top: 10px solid #f000;
+        border-bottom: 10px solid #eaeaea;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+    }
+    .headRight .menuBar{
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        box-shadow: 0px 2px 4px #ddd;
+        cursor: pointer;
+        position: relative;
+        background: white;
+    }
+    .menuBar::after{
+        content: '';
+        margin-top: 5px;
+        margin-left: -3px;
+        border-radius: 2px;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-left: 10px solid transparent;
+        border-right: 10px solid #409eff;
+        position: absolute;
+    }
+
+    .outBar{
+        position: relative;
+        transition: all .4s linear;
+    }
+
+    .inBar{
+        position: relative;
+        transition: all .4s linear;
+        transform: translateX(0px);
+    }
+
+    .ullist{
+        list-style: none;
+        width: auto;
+        height: 30px;
+        top: 0;
+        position: absolute;
+        margin-left: 16px;
+        z-index: -2;
+        display: flex;
+        overflow: hidden;
+        justify-content: center;
+        background: white;
+        box-shadow: 0px 3px 5px #eaeaea;
+
+        > ul li{
+            list-style: none;
+            margin: auto 15px;
+            height: 100%;
+            display: block;
+            min-width: 115px;
+        }
+    }
+
+}
+  
+/* .scanAside{
+    box-shadow: 0px 5px 8px #ccc;
+} */
+
+.scanAside,.scanMain {
+    overflow: hidden;
+    margin-top: 50px;
+    height: calc(100vh - 50px);
+}
+
+.scanMain {
+    overflow-y: auto;
+}
+
+.asideLeftContent,.asideRightContent{
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    .content{
+        height: calc(100vh - 50px);
+        width: 330px;   
+        background: rgb(255, 255, 255);
+        position: relative;
+        box-shadow: 0px 5px 10px #ddd6d6;
+    }
+    .contentBar{
+        width: 30px;
+        font-size: 24pt;
+        cursor: pointer;
+        /* border: 1px solid #f7f7f7; */
+        line-height: calc(100vh - 60px);
+    }
+  }
+
+
+</style>

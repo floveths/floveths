@@ -1,0 +1,61 @@
+{
+  "name": "floveths",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build ",
+    "buildDev": "vue-cli-service build --mode dev",
+    "buildPro": "vue-cli-service build --mode prod",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.28",
+    "@fortawesome/free-solid-svg-icons": "^5.13.0",
+    "@fortawesome/vue-fontawesome": "^0.1.9",
+    "core-js": "^3.4.3",
+    "element-ui": "^2.13.0",
+    "heyui": "^1.26.0",
+    "jquery": "^3.5.1",
+    "less-loader": "^5.0.0",
+    "vue": "^2.6.10",
+    "vue-i18n": "^8.17.5",
+    "vue-resource": "^1.5.1",
+    "vue-router": "^3.2.0",
+    "vuedraggable": "^2.23.2",
+    "vuex": "^3.1.3",
+    "ztree": "^3.5.24"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.1.0",
+    "@vue/cli-plugin-eslint": "^4.1.0",
+    "@vue/cli-service": "^4.1.0",
+    "babel-eslint": "^10.0.3",
+    "eslint": "^5.16.0",
+    "eslint-plugin-vue": "^5.0.0",
+    "node-sass": "^4.9.2",
+    "sass-loader": "^7.0.3",
+    "less-loader": "5.0.0",
+    "less": "3.9.0",
+    "vue-cli-plugin-element": "^1.0.1",
+    "vue-template-compiler": "^2.6.10"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "rules": {},
+    "parserOptions": {
+      "parser": "babel-eslint"
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
+}
