@@ -28,6 +28,9 @@
             </table>
 
         </el-card>
+
+        <div id="myChart" :style="{width: '1100px', height: '450px'}"></div>
+
     </div>
 
 </template>
@@ -47,6 +50,9 @@ export default {
         this.updateInfo = time;
 
     },
+    mounted(){
+        this.drawLine();
+    },
     methods : {
         updataInfo (){
 
@@ -59,6 +65,24 @@ export default {
                window.localStorage.setItem(str);
             });
 
+        },
+        drawLine(){
+        // 基于准备好的dom，初始化echarts实例
+            let myChart = this.$echarts.init(document.getElementById('myChart'))
+            // 绘制图表
+            myChart.setOption({
+                color:['#67C23A'],
+                tooltip: {},
+                xAxis: {
+                    data: ["衬衫","羊毛衫","雪纺衫","裤子","高跟鞋","袜子",'短裤','短袖','羽绒服','鞋子','帽子']
+                },
+                yAxis: {},
+                series: [{
+                    name: '销量',
+                    type: 'bar',
+                    data: [5, 20, 36, 10, 10, 20,78,45,62,50,35]
+                }]
+            });
         }
     }
     

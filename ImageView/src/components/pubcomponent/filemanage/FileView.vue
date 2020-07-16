@@ -8,6 +8,7 @@
                     <i class="el-icon-delete"></i>
                 </button>
             </div>
+            
             <div class="contentHead">
                 <div class="headBox">
                     <div class="fileList" @click="sliceBox('file')">
@@ -23,43 +24,25 @@
             <div class="fileTicketListContent" v-bind:style="slideContentBox">
 
 				<div class="fileListContent">
-                     <div class="fileContentBox" @click="viewPdfDoc">
-                        <img src="../../../../public/static/suc.png" class="imgTip " >
-                        <img src="../../../../public/static/pdf.png" class="fileImg">
-                        <input type="checkbox"  class="imgListCheck" />
-                        <label class="imgListLabel"  ></label>
-                        <span class="fileListName" @click="viewPdfDoc"  ></span>
-                    </div>
-                    <div class="fileContentBox">
-                        <img src="../../../../public/static/suc.png" class="imgTip " >
-                        <img src="../../../../public/static/word.png" class="fileImg">
-                        <input type="checkbox"  class="imgListCheck" />
-                        <label class="imgListLabel" ></label>
-                        <span class="fileListName" ></span>
-                    </div>
-                        
-                    <!-- <div class="fileContentBox">
-                        <img src="../../../../public/static/suc.png" class="imgTip " >
-                        <img :src="data.bFileIcon" class="fileImg">
-                        <input type="checkbox" :id="data.id" :value="data.id" v-model="filePicked" class="imgListCheck" />
-                        <label class="imgListLabel" :for="data.id" ></label>
-                        <span class="fileListName" @click="viewPdfDoc" v-bind:value="data.purl">{{data.fileName}}</span>
-                    </div> -->
-
+                     <div class="row">
+                         <div class="col-md-6 col-xs-6" v-for="(item,i) in fileListData" :key="i">
+                            <div class="fileContentBox" v-on:dblclick="viewPdfDoc" :value="item.fileId" >
+                                <img :src="item.fileIcon" class="fileImg">
+                                <input type="checkbox" :value="item.fileId" v-model="filePicked" class="imgListCheck" />
+                                <label class="imgListLabel"  :for="item.fileId"></label>
+                                <span class="fileListName" v-on:dblclick="viewPdfDoc" >{{item.fileName}}</span>
+                            </div>
+                         </div>
+                     </div>
                 </div>
+
                 <div class="ticketListBoxContent">
                     <ul class="ticketListUl">
-                        <li @click="viewPdfDoc">
-                            <img src="../../../../public/static/xls.png" >
-                            <p>Excle</p>
-                            <span>15.5KB</span>
+                        <li v-for="(item,i) in ticketListData" v-on:dblclick="viewPdfDoc" :value="item.fileId" :key="i">
+                            <img :src="item.fileSrc" >
+                            <p>{{item.fileName}}</p>
+                            <!-- <span>15.5KB</span> -->
                         </li>
-                        <li>
-                            <img src="../../../../public/static/xls.png" >
-                            <p>Excle</p>
-                            <span>15.5KB</span>
-                        </li>
-
                     </ul>
                 </div>
 
@@ -67,20 +50,37 @@
 
         </div>
 
+         <transition name="up">
+            <pdfdocview v-show="showPdfBox" :pdfurl="pdfUrl" @closepdfbox='showPdfBox=false'></pdfdocview>
+        </transition>
+
     </div>
 </template>
 <script>
 import util from '../../../utils/util.js'
 import par from '../../../utils/param.js'
+import PdfDocView from '../pdfdocdialog/PdfDocBox'
 
 export default {
     data : function(){
         return {
             'type' : 'F',
             'slideBox' : {},
+            'pdfUrl' : null,
+            'showPdfBox' : false,
             'filePicked' : [],
             'slideContentBox' : {},
-            'fileListData' : par.fileData
+            'fileListData' : par.fileListData,
+            'ticketListData' : par.ticketListData
+        }
+    },
+    components : {
+        'pdfdocview' : PdfDocView,
+    },
+    watch : {
+
+        fileAndTicketListData : function(){
+            this.loadData();
         }
     },
     methods : {
@@ -95,10 +95,10 @@ export default {
             })
         },
         viewPdfDoc : function(e){
-            let val = 'http://47.92.211.214:8080/webShowImage/getDocument/4d49775e-5720-fe1e-2580-071c71c90e32';
-            window.console.log(e.target.value);
-            this.$emit('fileview',val);
-
+            let id = e.target.parentElement.attributes.value.value;
+            let val = 'http://'+par.baseUrl+'/webShowImage/getDocument/'.concat(id);
+            this.pdfUrl = val;
+            this.showPdfBox = true;
         },
         sliceBox:function(par){
             if(par=='file'){
@@ -111,6 +111,7 @@ export default {
                 this.slideContentBox = {"transition":"all .3s linear","transform":"translate(-50%,0%)"};
             }
         }
+
     }
 }
 </script>
@@ -189,29 +190,26 @@ export default {
         width: 100%;
         overflow-y: auto;
         overflow-x: hidden;
-        display: grid;
-        padding: 0px 10px;
-        grid-template-columns: 1fr 1fr;
 
         .fileContentBox{
             box-sizing: border-box;
             position: relative;
             width: 90px;
             height: 90px;
-            margin: 10px 8px;
+            margin: 10px;
             cursor: pointer;
             overflow: hidden;
             border-radius: 4px;
             box-shadow: 0px 4px 10px#c8d2d7;
 
             .imgTip{
-                top: 0;
-                left: 0;
-                height: 65px !important;
-                width: 65px !important;
+                top: -5px;
+                left: -5px;
                 position: absolute;
                 background-size: cover;
                 border-top-left-radius: 5px;
+                height: 33px !important;
+                width: 50px !important;
             }
 
             .fileImg{
@@ -283,6 +281,7 @@ export default {
         .ticketListUl{
             width: 100%;
             height: 100%;
+            overflow-y: auto;
 
             li{
                 display: block;
@@ -290,6 +289,8 @@ export default {
                 height: 55px;
                 padding: 5px 10px;
                 cursor: pointer;
+                overflow: auto;
+                font-size: 9pt;
                 border-bottom: 1px solid rgb(228, 228, 228);
                 > * {
                     float: left;
@@ -298,8 +299,10 @@ export default {
                     width: 40px;
                     height: 40px;
                 }
-                p,span{
+                p{
                     margin: 10px 5px 5px;
+                    display: block;
+                    width: 185px;
                 }
             }
             
@@ -310,7 +313,7 @@ export default {
 
 .fileContentBox:hover > .fileListName{
     transition: all .4s linear;
-    transform: translateY(-118px);
+    transform: translateY(-90px);
 }
 
 .ticketListUl li:last-child{
@@ -319,6 +322,23 @@ export default {
 
 .ticketListUl li:hover{
     box-shadow: 0px 2px 8px rgb(206, 202, 202);
+}
+
+
+.sucTip{
+	width: 110px;
+	height: 50px;
+	background: rgb(59, 245, 75);
+	z-index: 10;
+	transform: skewY(-45deg);
+}
+.sucTip::after{
+	content: '上传成功';
+	margin-left: 20px;
+	font-size: 10pt;
+	margin-top: 11px;
+	position: absolute;
+	transform: skew(28deg);
 }
 
 </style>

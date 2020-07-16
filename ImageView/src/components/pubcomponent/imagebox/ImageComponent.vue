@@ -4,15 +4,15 @@
 			<div class="content">
 				<div class="row">
 					<div class="col-md-12">
-						<div class="panel panel-default" v-for="(data,index) in data" style="margin-top: 20px;"  v-show="data.typeNum > 0"  v-bind:key="index">
+						<div class="panel panel-default" v-for="(pdata,index) in data" style="margin-top: 20px;"  v-show="pdata.typeNum > 0"  v-bind:key="index">
 							<div class="panel-heading text-center">
-								<span>{{data.typeName}} 共 {{data.typeNum}} 张影像</span>
+								<span>{{pdata.typeName}} 共 {{pdata.typeNum}} 张影像</span>
 							</div>
 							
-							<div class="panel-body" :title="data.id">
-								<vuedragable v-model="data.children" group="people" v-bind="dragOptions" @start="dragStart($event,index)" @end="dragEnd" class="row">
+							<div class="panel-body" :title="pdata.id">
+								<vuedragable v-model="pdata.children" group="people" v-bind="dragOptions" @start="dragStart($event,index)" @end="dragEnd" class="row">
 									<div class=" col-md-3 col-sm-3 col-xs-6 dragItem" 
-										v-for="(data,s) in data.children"
+										v-for="(data,s) in pdata.children"
 										:data-fileid="data.fielId"
 										:data-name="data.name"
 										:data-id="data.id"
@@ -21,9 +21,9 @@
 										v-show="data.show">
 										
 										<div class="img-thumbnails" @mouseover="showErrorInfo" @mouseout="unShowErrorInfo">
-											<div class="imgTip1" v-show="data.imgTip!=''" :class="data.imgTip"></div>
-											<img  class="img cutImg" :src="data.sliceTip"  />
-											<img v-bind:src="data.imageSrc" @dblclick="showBigImg" @click="chooseThumbImg" v-bind:name="data.fielId" v-bind:id="data.curImgIndex"  class="img " >	
+											<div v-show="data.imgTip!=''" :class="data.imgTip"></div>
+											<div class="img " :class="data.cutImgCls" @click="showCutImg"></div>
+											<img v-bind:src="data.imageSrc" @dblclick="showBigImg" @click="chooseThumbImg" v-bind:name="data.fielId" :data-id="'p-'+index" v-bind:id="'c-'+s"  class="img " >	
 											<input type="checkbox" v-model="picked" :id="data.fielId" :value="data.fielId" class="checkdiv" @change="hasChecked"/>
 											<label class="checkLabel" :for="data.fielId"></label>
 											<input type="text" :value="data.imgName" class="reImgName" v-bind:name="data.fielId" v-on:blur="fileReName"/>
@@ -33,6 +33,21 @@
 								</vuedragable>
 							</div>
 						</div>
+
+						<div class="panel panel-default"  style="margin-top: 20px;"  v-show="attchListData.length > 0 && attachBox"  >
+							<div class="panel-heading text-center">
+								<span> 共 {{attchListData.length}} 个附件</span>
+							</div>
+							<div class="row">
+								<div class=" col-md-3 col-sm-3 col-xs-6 " v-for="(data,index) in attchListData" v-bind:key="index">
+									<div class="img-thumbnails" >
+										<img v-bind:src="data.fileIcon" @dblclick="viewPdfDoc" v-bind:name="data.fileId"  >	
+										<input type="text" :value="data.fileName" class="reImgName" v-bind:name="data.fielId" v-on:blur="fileReName"/>
+									</div>
+								</div>
+							</div>
+						</div>
+
 					</div>
 				</div>
             </div>
@@ -47,9 +62,10 @@
 			<errortip :isshow='showErrorTip' :tipvalue="errorTipValue" :x='tipX' :y='tipY' ></errortip>
 		</transition>
 
-		<!-- <transition name="up">
-			<imagedialog :imgSrc="bigImgUrl" v-show="isShowBigImg" @closeModel="closeDialogModel" :showBar="true" :ticketId="fielId" :appPoolData="[]" ></imagedialog>
-		</transition> -->
+		<transition name="up">
+            <pdfdocview v-show="showPdfBox" :pdfurl="pdfUrl" @closepdfbox='showPdfBox=false'></pdfdocview>
+        </transition>
+
     </div>
 
 </template>
@@ -61,24 +77,29 @@ import vueDragAble from 'vuedraggable'
 import util from '../../../utils/util.js'
 import par from '../../../utils/param.js'
 import Util from '../../../utils/util.js';
+import pdfDocView from '../pdfdocdialog/PdfDocBox'
 
 export default {
-	props : ['data'],
+	props : ['data','attachBox'],
 	data : function() {
 		return {
 			'imgTip' : '',
 			'tipX' : 0,
 			'tipY' : 0,
+			'picked' : [],
 			'dragDelete' : [],
 			'isDrag': false,
+			'pdfUrl' : null,
 			'showErrorTip' : false,
 			'errorTipValue' : null,
-			'picked' : par.pickImage,
-			'isKeyControlDown' : false
+			'showPdfBox' : false,
+			'isKeyControlDown' : false,
+			'attchListData' : par.fileListData
 		};
 	},
 	components : {
 		'errortip' : errorTip,
+		'pdfdocview' : pdfDocView,
 		'vuedragable' : vueDragAble
 	},
 	computed: {
@@ -112,6 +133,7 @@ export default {
 		document.addEventListener('click',(e)=>{
 			if(e.altKey){
 				this.picked = [];
+				par.pickImage = [];
 				let arr = document.getElementsByClassName('img-thumbnails');
 				for(let o=0;o<arr.length;o++){
 					arr[o].style.border = '1px solid #ddd';
@@ -123,9 +145,25 @@ export default {
 	methods : {
 		showBigImg(e){
 			
-			let msg = {'url':e.target.src,'fileId':e.target.name};
-			this.$store.commit('changeImgIndex',e.target.id);
+			let msg = {'url':e.target.src,'fileId':e.target.name,'barType':1};
+
+			let index = 0;
+			let cId = e.target.id;
+			let pId = e.target.dataset.id;
+			
+			par.imgViewArr.find((i,k)=>{
+                if(i.pId == pId&&i.cId == cId){
+                    return index = k;
+                }
+            });
+
+			this.$store.commit('changeImgIndex',index);
 			this.$emit('showBigImg',msg)
+		},
+		showCutImg(e){
+			
+			let msg = {'url':e.target.nextSibling.src,'fileId':e.target.nextSibling.name,'barType':3};
+			this.$emit('showBigImg',msg);
 		},
 		hasChecked(){
 			par.pickImage = this.picked
@@ -137,9 +175,10 @@ export default {
 		chooseThumbImg:function(e){
 
 			if(e.ctrlKey){
-				par.pickImage.push(e.target.name);
+				this.picked.push(e.target.name);
 				e.target.parentElement.style.border = '3px solid #ffaf17';
 			}
+			par.pickImage = this.picked;
 		},
 		dragStart(e,index) {
 			this.isDrag = true;
@@ -171,6 +210,12 @@ export default {
 			}
 			Util.reloadTree();
 		},
+		viewPdfDoc(e){
+			let id = e.target.name;
+            let val = 'http://'+par.baseUrl+'/webShowImage/getDocument/'.concat(id);
+            this.pdfUrl = val;
+            this.showPdfBox = true;
+		},
 		dragToDelete(){
 
 			if(this.dragDelete.length>0){
@@ -181,20 +226,21 @@ export default {
 				par.imgData[index].typeNum -= 1; 
 				var bool = par.imgData[index].children[imgIdex].isUpload;
 				par.imgData[index].children.splice(imgIdex,1);
-				
+				let pId = index, cId = imgIdex;
 				this.dragDelete = [];//立即清空;
 				if(!bool){
 					
+					
 					let uploadArr = par.uploadImageArr.filter((i)=>{
-						return i.fielId != imgFileId;
+						return i.fielId != imgFileId ;
 					});
 
-					let viewArr = par.imgTotalArr.filter((e)=>{
-						return e.imgFielId != imgFileId;
+					let viewArr = par.imgViewArr.filter((e)=>{
+						return e.pId != pId && e.cId != cId;
 					});
 
 					par.uploadImgCount-=1;
-					par.imgTotalArr = viewArr;
+					par.imgViewArr = viewArr;
 					par.uploadImageArr = uploadArr;
 					this.$store.commit('changeImgCount','-');
 
@@ -340,7 +386,18 @@ export default {
 		margin: auto;
 		padding: 8px;
 	}
-
+	.cutImg{
+		width: 25px;
+		height: 70px;
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		background:rgb(47, 255, 141);
+		z-index: 10;
+		display: block;
+		margin-left: 0px;
+		margin-bottom: 20px;
+	}
 	/* .imgTip{
 		width: 85px;
 		height: 85px;
@@ -368,11 +425,15 @@ export default {
 	word-break: break-word;
 }
 
+.cutImg::after{
+	font-size: 8pt;
+	content: '点击显示切图';
+}
+
 .reImgName{
 	border: 0px;
 	width: 100%;
 	position: absolute;
-	z-index: 10;
 	font-size: 10pt;
 	bottom: 0;
 	margin-left: -4px;
@@ -387,6 +448,7 @@ export default {
 	transform: skewY(-45deg);
 	margin-left: -22px;
 }
+
 .imgErrorTip::before{
 	content: '上传失败';
 	margin-left: 20px;
@@ -397,20 +459,112 @@ export default {
 }
 
 .imgSucTip{
-		width: 110px;
-		height: 50px;
-		background: rgb(84, 233, 79);
-		z-index: 10;
-		transform: skewY(-45deg);
-		margin-left: -22px;
-	}
+	width: 80px;
+	height: 35px;
+	background: rgb(84, 233, 79);
+	z-index: 10;
+	transform: skewY(-45deg);
+	margin-left: -5px;
+}
+
 .imgSucTip::before{
-		content: '上传成功';
-		margin-left: 20px;
-		font-size: 10pt;
-		margin-top: 11px;
-		position: absolute;
-		transform: skew(28deg);
-	}
+	content: '上传成功';
+	margin-left: 5px;
+	font-size: 9pt;
+	margin-top: 11px;
+	position: absolute;
+	transform: skew(30deg);
+}
+
+.imgFpczTip{
+	width: 80px;
+	height: 35px;
+	background: rgb(255, 139, 45);
+	z-index: 10;
+	transform: skewY(-45deg);
+	margin-left: -5px;
+}
+
+.imgFpczTip::before{
+	content: '发票信息存在';
+	margin-left: 5px;
+	font-size: 9pt;
+	margin-top: 11px;
+	position: absolute;
+	transform: skew(30deg);
+}
+
+.imgFailInfoTip{
+	width: 80px;
+	height: 35px;
+	background: rgb(251, 255, 33);
+	z-index: 10;
+	transform: skewY(-45deg);
+	margin-left: -5px;
+}
+
+.imgFailInfoTip::before{
+	content: '发票信息保存失败';
+	margin-left: 5px;
+	font-size: 9pt;
+	margin-top: 11px;
+	position: absolute;
+	transform: skew(30deg);
+}
+
+.imgCheckTip{
+	width: 80px;
+	height: 35px;
+	background: rgb(63, 140, 255);
+	z-index: 10;
+	transform: skewY(-45deg);
+	margin-left: -5px;
+}
+
+.imgCheckTip::before{
+	content: '校验失败';
+	margin-left: 5px;
+	font-size: 10pt;
+	margin-top: 11px;
+	position: absolute;
+	transform: skew(30deg);
+}
+
+.imgFplxTip{
+	width: 80px;
+	height: 35px;
+	background: rgb(190, 78, 255);
+	z-index: 10;
+	transform: skewY(-45deg);
+	margin-left: -5px;
+}
+
+.imgFplxTip::before{
+	content: '发票连续';
+	margin-left: 5px;
+	font-size: 9pt;
+	margin-top: 11px;
+	position: absolute;
+	transform: skew(30deg);
+}
+
+.imgCheckFailTip{
+	width: 80px;
+	height: 35px;
+	background: rgb(255, 72, 163);
+	z-index: 10;
+	transform: skewY(-45deg);
+	margin-left: -5px;
+}
+
+.imgCheckFailTip::before{
+	content: '查验失败';
+	margin-left: 5px;
+	font-size: 9pt;
+	margin-top: 11px;
+	position: absolute;
+	transform: skew(30deg);
+}
+
 
 </style>

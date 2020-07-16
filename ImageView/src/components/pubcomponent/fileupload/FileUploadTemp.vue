@@ -1,10 +1,6 @@
 <template>
     <div class="fileUpBox">
 
-        <!-- <div class="loadingBox" v-show="loadingImg">
-            <img src="../../../../public/static/loading.gif" >
-        </div> -->
-
         <div class="fileBox">
 
             <div class="photoBox">
@@ -12,10 +8,10 @@
                     <div class="col-md-3 col-xs-3 col-sm-3" v-for="(data,i) in fileListData" :key="i">
                         <div class="fileContentBox" >
 							<img src="../../../../public/static/suc.png" class="imgTip" >
-							<img :src="data.bFileIcon" class="fileImg">
-							<input type="checkbox" :id="data.id+''+i" v-model="pickFile" :value="data.id" class="imgListCheck" />
-							<label class="imgListLabel" :for="data.id+''+i"></label>
-							<span class="fileListName" @click="showFile" v-bind:value="data.purl">{{data.fileName}}</span>
+							<img :src="data.fileIcon" class="fileImg">
+							<input type="checkbox" :id="data.fileId+'-'+i" v-model="pickFile" :value="data.fileId" class="imgListCheck" />
+							<label class="imgListLabel" :for="data.fileId+'-'+i"></label>
+                            <span class="fileListName" v-on:dblclick="viewPdfDoc" >{{data.fileName}}</span>
 						</div>
                     </div> 
                     
@@ -40,7 +36,9 @@
             </div>
         </div>
 
-        <fileUploadBarBox></fileUploadBarBox>
+        <transition name="up">
+            <pdfdocview v-show="showPdfBox" :pdfurl="pdfUrl" @closepdfbox='showPdfBox=false'></pdfdocview>
+        </transition>
 
     </div>
 </template>
@@ -48,18 +46,20 @@
 <script>
 import util from '../../../utils/util.js'
 import par from '../../../utils/param.js'
-import fileUploadBarBox from './fileUploadBarBox'
+import pdfDocView from '../pdfdocdialog/PdfDocBox'
 
 export default {
     data : function(){
         return {
+            'pdfUrl' : null,
             'pickFile' : [],
             'loadingImg' : false,
-            'fileListData' : par.fileData
+            'showPdfBox' : false,
+            'fileListData' : par.fileListData
         }
     },
     components : {
-        'fileUploadBarBox' : fileUploadBarBox
+        'pdfdocview' : pdfDocView
     },
     methods : {
         openFile : function(){
@@ -79,15 +79,20 @@ export default {
 
             var obj = this.$refs.getFile;
             var len = obj.files.length;
+
             for(let s=0;s<len;s++){
                 let fileSize = util.getFileSize(obj.files[s].size);
-                par.uploadFileArr.push({'fileObj':obj.files[s],'fileName':obj.files[s].name,'fileSize':fileSize});                
+                par.uploadFileArr.push({'fileObj':obj.files[s],'fileName':obj.files[s].name,'fileSize':fileSize,'state':0});                
             }
 
-            util.uploadFiles(obj);
+            util.uploadFiles(par.uploadFileArr);
+            this.$emit('uploadfile')
         },
-        showFile : function(e){
-            window.open(e.target.value);
+        viewPdfDoc : function(e){
+            
+            let val = e.target.value;
+            this.pdfUrl = 'http://'+par.baseUrl+val;
+            this.showPdfBox = true;
         }
     }
     

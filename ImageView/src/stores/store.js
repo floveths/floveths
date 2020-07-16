@@ -14,7 +14,7 @@ const store = new Vuex.Store({
         }],
         'fileListData' : [],
         'defaultLang' : 'zh',
-        'imgTotalCount' : 0,
+        'imgTotalCount' : 0,//图片总数量
         'curImgIndex' : 0,//查看图片时索引
         'initCount' : 0,//导入图片得索引
         'initFileId' : '',//导入图片得id
@@ -45,7 +45,6 @@ const store = new Vuex.Store({
                     state.imgTotalCount--;
                 break;
             }
-            
         },
         changeImgIndex : function(state,id){
             state.curImgIndex = parseInt(id);
@@ -55,6 +54,10 @@ const store = new Vuex.Store({
         },
         showImageUpload : function(state){
             state.showImageUpload == true? state.showImageUpload = false:state.showImageUpload = true;
+            if(state.showImageUpload==false){
+                state.curUploadCount = 1;
+                par.uploadImgCount = state.uploadImgCount = state.uploadProgress = 0;
+            }
         },
         showImgByFileId : function(state,id){
             

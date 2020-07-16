@@ -97,7 +97,6 @@ export default {
     beforeMount (){
         util.getRequest(`/appApi/getImageTypes/${this.user}`,(res)=>{
             this.typeOptions = this.typeOptions.concat(res.body.data);
-
         });
 
         this.getData('null');

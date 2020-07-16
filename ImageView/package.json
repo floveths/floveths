@@ -2,9 +2,10 @@
   "name": "floveths",
   "version": "0.1.0",
   "private": true,
+  "productionSourceMap": false,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build ",
+    "build": "vue-cli-service build",
     "buildDev": "vue-cli-service build --mode dev",
     "buildPro": "vue-cli-service build --mode prod",
     "lint": "vue-cli-service lint"
@@ -14,6 +15,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "core-js": "^3.4.3",
+    "echarts": "^4.8.0",
     "element-ui": "^2.13.0",
     "heyui": "^1.26.0",
     "jquery": "^3.5.1",

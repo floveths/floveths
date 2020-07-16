@@ -10,7 +10,7 @@ let par = {
                 'id' : '',
                 'name' : '',
                 'imgTip' : '',图片水印
-                'sliceTip' : '',图片切割水印
+                'cutImgCls' : '',图片切割水印
                 'imageSrc': '',图片url base64
                 'fielId': '',图片id
                 'imgName': '',图片名
@@ -22,9 +22,8 @@ let par = {
         ]
     }]*/
 
-    baseUrl : '47.92.211.214:8080',
+    baseUrl : '47.92.211.214:8080',//'192.168.0.40:8080',
     imgData : [],//单扫多扫都存放在这
-    fileData : [],//附件
     batchId : [],//批次号单扫批扫都存放
     imgScale : 1,//默认值
 	scaleBig : 1,//放大
@@ -35,7 +34,7 @@ let par = {
     nodeId : null,//树节点选择的业务类型 例如 飞机票
     nodeName : '其它',
     curImgIndex : 0,//每张图片下标
-    imgTotalArr : [],//存储所有图片数组 查看大图时使用
+    imgViewArr : [],//存储所有图片数组 查看大图时使用
     postImgArr : [],//提交树
     serverIp : '47.92.211.214',
     serverPort : '8080',
@@ -46,7 +45,18 @@ let par = {
     pickImage : [],//选中图片
     uploadFileArr : [],//要上传的附件
     uploadImageArr : [],//要上传的影像
+    fileListData : [],//附件
+    ticketListData : [],//电子发票
+
+    billNum : null,
+    userNo : null,
+    departnum : null,
+    billtypename : null,
+    systemcode : null,
+    SaveType : null,
+    userId : null,
     businessSerialNo : null,//流水号
+
     uploadFileIsComplite : false,
     deviceOptions : [],//扫描设备
     ws : new WebSocket("ws://127.0.0.1:11345/Laputa"),
@@ -108,7 +118,6 @@ let par = {
     
     billTypeName : null,//单据报销类型
     batchIdArr : [],//批扫时存放批次号
-    userNo : null,//当前登录用户
     
     codImgUrl : null,//单据二维码
     isShow : false,//是否显示大图

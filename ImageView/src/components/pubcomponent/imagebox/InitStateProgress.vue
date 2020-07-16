@@ -36,8 +36,9 @@
                     <li class="initContentLI initContentLIInfo" v-for="(c,i) in initFileData" :key="i">
                         <div><i class="el-icon-document"></i> {{c.fileName}}</div>
                         <div>{{c.fileSize}}</div>
-                        <div v-if="!c.show"><i class="el-icon-loading"></i></div>
-                        <div v-else><i class="el-icon-circle-check"></i></div>
+                        <div v-if="c.state==0"><i class="el-icon-loading"></i></div>
+                        <div v-else-if="c.state==1"><i class="el-icon-circle-check"></i></div>
+                        <div v-else-if="c.state==2"><i class="el-icon-warning-outline" style="color:red"></i></div>
                     </li>
                 </ul>
 
@@ -63,6 +64,7 @@ export default {
         }
     }
 }
+
 </script>
 <style lang="less">
 *{

@@ -212,7 +212,7 @@ export default({
 
         .leftTop{
           width: 100%;
-          height: 200px;
+          height: auto;
           padding: 10px 20px;
           box-sizing: border-box;
           h4{

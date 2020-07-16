@@ -47,6 +47,21 @@ export default {
     components : {
         'addtreenodebox' : treenodebox
     },
+    watch : {
+        showfilelistBar : function(){
+            window.console.log(this.showfilelistBar)
+            if(this.showfilelistBar){
+                let name = par.ticketNodes[0].children[par.ticketNodes[0].children.length-1].name;
+                if(name.lastIndexOf('附件')!=-1){
+                    par.ticketNodes[0].children.splice((par.ticketNodes[0].children.length-1),1);
+                }
+            }else{
+                par.ticketNodes[0].children.push(par.fileNodes[0]);
+            }
+            $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+        }
+        
+    },
     methods : {
         addTreeNode (){
             

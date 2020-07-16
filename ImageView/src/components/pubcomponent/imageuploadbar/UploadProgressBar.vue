@@ -14,15 +14,28 @@
                 </div>
 
                 <ul class="uploadBarUl">
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
+
+                    <li class="sl-ro" style="transform: rotateX(0deg) translateZ(15px);"></li>
+                    <li class="sl-ro" style="transform: rotateX(45deg) translateZ(15px);"></li>
+                    <li class="sl-ro" style="transform: rotateX(90deg) translateZ(15px);"></li>
+                    <li class="sl-ro" style="transform: rotateX(135deg) translateZ(15px);"></li>
                     
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
-                    <li class="sl-ro" v-bind:style="{'width':$store.state.uploadProgress+'%'}"></li>
+                    <li class="sl-ro" style="transform: rotateX(180deg) translateZ(15px);"></li>
+                    <li class="sl-ro" style="transform: rotateX(225deg) translateZ(15px);"></li>
+                    <li class="sl-ro" style="transform: rotateX(270deg) translateZ(15px);"></li>
+                    <li class="sl-ro" style="transform: rotateX(315deg) translateZ(15px);"></li>
+
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(0deg) translateZ(10px);"></li>
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(45deg) translateZ(10px);"></li>
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(90deg) translateZ(10px);"></li>
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(135deg) translateZ(10px);"></li>
+                                    
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(180deg) translateZ(10px);"></li>
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(225deg) translateZ(10px);"></li>
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(270deg) translateZ(10px);"></li>
+                    <li class="sl-rob" v-bind:style="{'width':$store.state.uploadProgress+'%'}" style="transform: rotateX(315deg) translateZ(10px);"></li>
+
+
                 </ul>
             </div>
 
@@ -96,13 +109,13 @@ export default {
     }
 
     .uploadContent{
-        width: 475px;
+        width: 505px;
         height: auto;
         margin: 150px auto;
 
         .uploadBarUl{
-            width: 475px;
-            height: 40px;
+            width: 455px;
+            height: 15px;
             list-style: none;	
             margin: 10px 22px 0px !important;
             transform-style: preserve-3d;
@@ -111,71 +124,29 @@ export default {
         }
 
         .uploadBarUl li{
-            width: 475px;
-            height: 40px;
+            width: 455px;
             position: absolute;
             box-shadow: 2px 3px 7px #deffec;
         }
 
-        .uploadBarUl li:nth-child(1){
-            transform: translateZ(20px);
-            background: #f6f6f626;
-            border: 1px solid #def0ff;
+        .uploadBarUl .sl-ro{
+            height: 15px;
+            border-radius: 5px;
+            background:  #6eb9ff52;
         }
 
-        .uploadBarUl li:nth-child(2){
-            transform: translateY(-20px) rotateX(90deg);
-            background: #f6f6f626;
-            border: 1px solid #def0ff;
-        }
-
-        .uploadBarUl li:nth-child(3){
-            transform: translateZ(-20px);
-            background: #f6f6f626;
-            border: 1px solid #def0ff;
-        }
-
-        .uploadBarUl li:nth-child(4){
-            background: #f6f6f626;
-            border: 1px solid #def0ff;
-            transform: translateY(20px) rotateX(-90deg);
-        }
-
-        .uploadBarUl li:nth-child(5){
-            width: 0%;
-            transform: translateZ(20px);
-            box-shadow: 0px 2px 5px #b5f1ff;
-            background: linear-gradient(120deg, #b2ff86, #8ae3ff);
-        }
-
-        .uploadBarUl li:nth-child(6){
-            width: 0%;
-            box-shadow: 0px 2px 5px #b5f1ff;
-            transform: translateY(-20px) rotateX(90deg);
-            background: linear-gradient(120deg, #b2ff86, #8ae3ff);
-        }
-
-        .uploadBarUl li:nth-child(7){
-            width: 0%;
-            box-shadow: 0px 2px 5px #b5f1ff;
-            transform: translateZ(-20px);
-            background: linear-gradient(120deg, #b2ff86, #8ae3ff);
-        }
-
-        .uploadBarUl li:nth-child(8){
-            width: 0%;
-            box-shadow: 0px 2px 5px #b5f1ff;
-            transform: translateY(20px) rotateX(-90deg);
-            background: linear-gradient(120deg, #b2ff86, #8ae3ff);
+        .uploadBarUl .sl-rob{
+            height: 10px;
+            transition: all 0.3s linear;
+            background: linear-gradient(120deg, #b2ff86, #ffad55);
         }
 
         .textBox{
-            width: 475px;
+            width: 455px;
             height: 45px;
             margin: 0px auto;
             display: block;
-            margin-top: -10px;
-            margin-left: 22px;
+            margin-left: 20px;
         }
 
     }
@@ -186,8 +157,9 @@ export default {
 .flagBox:before{
 	content: '';
 	position: absolute;
-	margin-top: -30px;
-	transform: translateX(40px);
+    margin-top: -30px;
+    margin-left: 20px;
+	transform: translateX(20px);
 	border-bottom: 10px solid #2bd1ff;
 	border-top: 10px solid transparent;
 	border-left: 10px solid transparent;
@@ -199,17 +171,18 @@ export default {
 	position: absolute;
 	width: 15px;
 	height: 120px;
-	margin-top: 10px;
+    margin-top: 10px;
+    margin-left: 20px;
 	background: #6edfff;
-	transform: translateX(40px);
+	transform: translateX(20px);
 	box-shadow: 0px 5px 10px #6f97e3 inset;
 }
 
 .slideText:before{
 	content: '';
 	position: absolute;
-	margin-top: 40px;
-	transform: translateX(10px);
+	margin-top: 45px;
+	transform: translateX(12px);
 	border-bottom: 10px solid transparent;
 	border-top: 10px solid #49e2ff;
 	border-left: 10px solid transparent;
@@ -223,7 +196,10 @@ export default {
 	text-align: center;
 	line-height: 40px;
 	background:	#49e2ff;
-	color:	white;
+    color:	white;
+    bottom: 15px;
+    position: relative;
+    margin-left: -20px;
 	border-bottom: 1px solid #49e2ff;
     transform:  translateX(-45%);
     transition: all .35s linear;
@@ -232,23 +208,39 @@ export default {
 
 @keyframes uploadProgress{
     0%{
-        transition:all 1s;
+        transition:all .5s;
         transform:rotateX(0deg);
     }
+    12.5%{
+        transition:all .5s;
+        transform:rotateX(-45deg);
+    }
     25%{
-        transition:all 1s;
+        transition:all .5s;
         transform:rotateX(-90deg);
     }
+    37.5%{
+        transition:all .5s;
+        transform:rotateX(-135deg);
+    }
     50%{
-        transition:all 1s;
+        transition:all .5s;
         transform:rotateX(-180deg);
     }
-    75%{
+    62.5%{
+        transition:all .5s;
+        transform:rotateX(-225deg);
+    }
+    80%{
         transition:all 1s;
         transform:rotateX(-270deg);
     }
-    100%{
+    82.5%{
         transition:all 1s;
+        transform:rotateX(-315deg);
+    }
+    100%{
+        transition:all .5s;
         transform:rotateX(-360deg);
     }
 }

@@ -56,6 +56,7 @@
                                     <div class="dropItem">显示附件上传  <el-switch v-model="showFileUpBar" size="mini" active-color="rgb(64, 158, 255)" inactive-color="#ff4949"> </el-switch></div>
                                     <div class="dropItem">显示附件列表  <el-switch v-model="showFileListBar" active-color="rgb(64, 158, 255)" inactive-color="#ff4949"> </el-switch></div>
                                     <div class="dropItem">显示影像矫正  <el-switch v-model="showCorrectImg" active-color="rgb(64, 158, 255)" inactive-color="#ff4949"> </el-switch></div>
+                                    <div class="dropItem">显示附件一栏  <el-switch v-model="showAttachBox" active-color="rgb(64, 158, 255)" inactive-color="#ff4949"> </el-switch></div>
                                 </el-dropdown-menu>
                             </el-dropdown>
 
@@ -103,7 +104,7 @@
                 <!--画图区域-->
                 <el-main class="scanMain">
 
-                    <imgtemp-component :data='imgData' @showBigImg="showBigImage"></imgtemp-component>
+                    <imgtempcomponent :data='imgData' :attachBox="showAttachBox" @showBigImg="showBigImage"></imgtempcomponent>
 
                 </el-main>
 
@@ -114,7 +115,7 @@
                         </div>
                         <div class="content">
 
-                            <filelistview @fileview="viewPdfDoc"></filelistview>
+                            <filelistview ></filelistview>
 
                         </div>
                         
@@ -126,26 +127,29 @@
         <transition name="up">
             <smallappfolder v-show="$store.state.showAppFolder" @showAppPoolView="showAppPool=true"></smallappfolder>
         </transition>
+        
         <transition name="up">    
-            <smallapppool v-if="showAppPool" @closeAppPool="closeAppImagePool" @showAppBigImg="showAppPoolImage"></smallapppool>
+            <smallapppool v-if="showAppPool" @closeAppPool="closeAppImagePool" :user="userNo" @showAppBigImg="showAppPoolImage"></smallapppool>
         </transition>
+        
         <transition name="up">    
-            <fileupload v-show="$store.state.showFileUpload"></fileupload>
+            <fileupload v-show="$store.state.showFileUpload" @uploadfile="showInitImgProgress=true"></fileupload>
         </transition>
+
         <transition>
             <initstateprogress v-show="showInitImgProgress" @closeinitprogress="showInitImgProgress=false"></initstateprogress>
         </transition>
-        <transition name="up">
-            <pdfdocview v-show="showPdfBox" :pdfurl="pdfUrl" @closepdfbox='showPdfBox=false'></pdfdocview>
-        </transition>
+       
         <transition name="up">
             <correctimage v-show="showRotateProgressBar" :closemodel="showRotateModel" :isfull="isCorrect" :rotatevalue="rotateValue"></correctimage>
         </transition>
+        
         <transition name="up">        
-            <uploadprogressbar v-show="$store.state.showImageUpload" :uploadimgcount="uploadImgCount"></uploadprogressbar>
+            <uploadprogressbar v-show="$store.state.showImageUpload" ></uploadprogressbar>
         </transition>
+        
         <transition name="up">
-            <imagedialog :imgSrc="bigImgUrl" v-show="isShowBigImg" @closeModel="closeDialogModel" :appPoolData="appListData" :showBar="showOprationBar" :ticketId="ticketId" ></imagedialog>
+            <imagedialog :imgSrc="bigImgUrl" v-show="isShowBigImg" @closeModel="closeDialogModel" :appPoolData="appListData" :barType="dialogBarType" :ticketId="ticketId" ></imagedialog>
         </transition>
     </div>
 
@@ -158,16 +162,14 @@ import util from '../../utils/util'
 import '../../assets/css/ztree.css'
 import scanTree from '../pubcomponent/treemanage/ScanTree'
 import correctImage from '../pubcomponent/imagebox/CorrectImage'
-import PdfDocView from '../pubcomponent/pdfdocdialog/PdfDocBox'
-import imageDialog from '../pubcomponent/imagedialog/ImgeModelDialog'
-import InitStateProgress from '../pubcomponent/imagebox/InitStateProgress'
-import imagecomponent from '../../components/pubcomponent/imagebox/ImageComponent'
-import filelistview from '../../components/pubcomponent/filemanage/FileView'
-import smallappfolder from '../../components/pubcomponent/smallappfolder/AppFolder'
-import fileupload from '../../components/pubcomponent/fileupload/FileUploadTemp'
-import smallapppool from '../../components/pubcomponent/smallappfolder/smallapppool/AppPool'
-import uploadprogressbar from '../../components/pubcomponent/imageuploadbar/UploadProgressBar'
-
+import imageDialog from '../pubcomponent/imagedialog/ImageModelDialog'
+import initStateProgress from '../pubcomponent/imagebox/InitStateProgress'
+import imageComponent from '../../components/pubcomponent/imagebox/ImageComponent'
+import fileListView from '../../components/pubcomponent/filemanage/FileView'
+import smallAppFolder from '../../components/pubcomponent/smallappfolder/AppFolder'
+import fileUpload from '../../components/pubcomponent/fileupload/FileUploadTemp'
+import smallApppool from '../../components/pubcomponent/smallappfolder/smallapppool/AppPool'
+import uploadProgressBar from '../../components/pubcomponent/imageuploadbar/UploadProgressBar'
 
 export default {
     data(){
@@ -176,25 +178,25 @@ export default {
             'showFileUpBar' : true,
             'showCorrectImg' : true,
             'showFileListBar' : true,
+            'showAttachBox' : true,
             'showAppPool' : false,
 
             'lang' : '',
             'showBar' : false,
             'moveBar' : '',
-            'imgData' : [],
+            'scanType': 0,
+            'imgData' : par.imgData,
             'ticketId' : '',
             'isSave' : 0,//初始化未上传
             'pageOp' : '',
-            'pdfUrl' : '',
             'appListData' : [],
             'isCorrect' : false,
             'rotateValue' : 1,
             'bigImgUrl' : null,
             'deviceValue' : '',
             'showPdfBox' : false,
-            'uploadImgCount' : 0,
             'isShowBigImg' : false,
-            'showOprationBar' : true,
+            'dialogBarType' : 0,
             'showInitImgProgress' : false,
             'deviceOptions' : par.deviceOptions,
             'pageOptions' : [{'label':'单面','value':'1'},{'label':'双面','value':'2'}],
@@ -209,38 +211,32 @@ export default {
     },
     components : {
         'scantree' : scanTree,
-        'fileupload' : fileupload,
-        'pdfdocview' : PdfDocView,
+        'fileupload' : fileUpload,
         'imagedialog' : imageDialog,
-        'filelistview' : filelistview,
+        'filelistview' : fileListView,
         'correctimage' : correctImage,
-        'smallapppool' : smallapppool,
-        'smallappfolder' : smallappfolder,
-        'imgtemp-component' : imagecomponent,
-        'initstateprogress' : InitStateProgress,
-        'uploadprogressbar' : uploadprogressbar
+        'smallapppool' : smallApppool,
+        'smallappfolder' : smallAppFolder,
+        'imgtempcomponent' : imageComponent,
+        'initstateprogress' : initStateProgress,
+        'uploadprogressbar' : uploadProgressBar,
+        
     },
     beforeMount : function(){
+
+        util.initWS();
         this.lang = this.$store.state.defaultLang;
         this.langOptions = this.$store.state.langOptions;
-        
+    },
+    mounted : function(){
 
-       /*  util.getRequest('/imageUploadServices/',(res)=>{
+        util.getRequest('/imageUploadServices/1001A81000000005W16Y',(res)=>{
 
-            window.console.log(res);
-            
             if(res.body.status=="200"||res.body.status==200){
                 par.batchId.push(res.body.data.batchId);
                 par.businessSerialNo = res.body.data.businessSerialNo;
+                util.uploadDataFromServer(res.body.data.tree,res.body.data.files);
                 
-                par.imgData = par.imgData.concat(res.body.data.tree);
-                par.fileData = par.fileData.concat(res.body.data.files);
-                par.ticketNodes[0].children = par.ticketNodes[0].children.concat(par.imgData);
-
-                $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
-                par.fileNodes[0].children = par.fileNodes[0].children.concat(par.fileData);
-                $.fn.zTree.init($("#fileDemo"), par.setting, par.fileNodes);
-
             }else{
                 util.getRequest('/imageUploadServices/batchId',(res)=>{
                     if(res.body.status==200){
@@ -251,14 +247,9 @@ export default {
                     }
                 })
             }
-        }); */
-       
-    },
-    mounted : function(){
-
-        util.initWS();
+            
+        });
         util.initTreeNode();
-
     },
     methods:{
         changeLang (lang){
@@ -311,59 +302,15 @@ export default {
                 let name = f.name;
                  name = name.substring(name.lastIndexOf('.'),name.length);
                 if(name!='.jpg'&&name!='.png'&&name!='bmp'&&name!='tif'&&name!='gif'&&name!='pcx'&&name!='tga'&&name!='exif'&&name!='fpx'&&name!='webp'){
-                    par.uploadFileArr.push({'fileObj':f,'fileName':f.name,'fileSize':fileSize});
+                    par.uploadFileArr.push({'fileObj':f,'fileName':f.name,'fileSize':fileSize,'state':0});
                 }else{
-                    par.uploadImgCount++;
-                    let src = window.URL.createObjectURL(f);
-                    let dataURL = null;
-                    let img = new Image();
-                    img.src = src;
-                    img.onload = function(){
-                        let canvas = document.createElement("canvas");
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        let ctx = canvas.getContext("2d");
-                        ctx.drawImage(img, 0, 0, img.width, img.height);
-                        dataURL = canvas.toDataURL("image/jpeg");
-
-                        window.console.log(par.nodeId);
-                        let fielId = util.getFielId();
-                        let fileName = util.getFileName();
-                        let index = util.addTypeNum(par.nodeId);
-
-                        var base64 = dataURL.replace("data:image/jpeg;base64,", "");
-                        var objmsg = {
-                            InterFace: "Transmission_WebToLocal",
-                            FileId: fielId,
-                            FileName: fileName,
-                            Base64: base64
-                        };
-                        par.ws.send(JSON.stringify(objmsg));
-
-                        par.curImgIndex++;
-                        let imgId = par.nodeId+''+par.imgData[index].typeNum;
-                        let child = {'id': imgId,'name':fileName,'imageSrc':dataURL,'fielId':fielId,'imgName':fileName,'isUpload':false,'curImgIndex':par.curImgIndex,'imgTip':'','sliceTip':'','show':false,'fileSize':fileSize};
-                        
-                        par.uploadImageArr.push(child);//存放要上传的图片 上传使用
-                        par.imgData[index].children.push(child); //树
-
-                        par.imgTotalArr.push({'imageSrc':dataURL,'imgFielId':fielId,'isUpload':false});//存储图片 查看大图时使用
-                        //par.ticketNodes[0].children = par.imgData;
-                        par.ticketNodes[0].children[index] = par.imgData[index];
-                        //$.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
-                        _this.$store.commit('changeImgCount','+');
-                    }
+                    util.drawPicture(_this,f,fileSize);
                 }
                 
             }
 
-            util.reloadTree();
-            this.reloadData();
             this.$store.state.initImportCount = par.uploadImgCount;
             util.uploadFiles(par.uploadFileArr);
-        },
-        reloadData(){
-            this.imgData = par.imgData;
         },
         delImg(){
 
@@ -388,8 +335,8 @@ export default {
             }
 
             let imgSrc = null;
-            par.imgTotalArr.find((k)=>{
-                if(k.imgFielId == delArr[0]){
+            par.uploadImageArr.find((k)=>{
+                if(k.fielId == delArr[0]){
                     imgSrc = k.imageSrc;
                 } 
             })
@@ -397,6 +344,7 @@ export default {
             this.appListData = [];
             this.ticketId = delArr[0];
             this.bigImgUrl = imgSrc;
+            this.dialogBarType = 2;
             this.isShowBigImg = true;
 
         },
@@ -404,7 +352,7 @@ export default {
             this.bigImgUrl = msg.url;
             this.ticketId = msg.fileId;
             this.appListData = [];
-            this.showOprationBar = true;
+            this.dialogBarType = msg.barType;
 			this.isShowBigImg = true;
         },
         showAppPoolImage(msg){
@@ -422,7 +370,7 @@ export default {
             par.pickImage = [];
             this.isShowBigImg = msg.close;
 
-            if(!isRotate){
+            if(isRotate==2){
 
                 this.isShowBigImg = msg.close;
                 
@@ -468,7 +416,7 @@ export default {
                 this.showRotateModel();
             }
             
-		},
+        },
         saveImg(){
 
             var count = par.uploadImgCount;
@@ -490,10 +438,6 @@ export default {
 
             this.$store.commit('showImageUpload');
             this.$store.commit('changeUploadImgCount',count);
-        },
-        viewPdfDoc(val){
-            this.pdfUrl = val;
-            this.showPdfBox = true;
         },
         showAside(par){
             if(par=='left'){
