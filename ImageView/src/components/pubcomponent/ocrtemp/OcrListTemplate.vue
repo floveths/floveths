@@ -329,8 +329,7 @@
                             </ul>
                             
                             <ul v-else-if="item.type=='000'||item.type=='444'" >
-                                <li class="title">其他</li>
-                                <li class="bullet-item">其他</li>
+                                <li class="title">其它</li>
                             </ul> 
 
                         </div>
@@ -361,6 +360,8 @@
     </div>
 </template>
 <script>
+import util from '../../../utils/util.js'
+
 export default {
     props : ['items','type'],
     methods : {
@@ -368,6 +369,296 @@ export default {
 
         },
         saveOcr(){
+            let data = null;
+            var type = this.items[0].type;
+
+            if (type == 100 || type == 101 || type == 102) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "sumAmount": this.items[0].sumAmount,
+                    "invoiceCode": this.items[0].invoiceCode,
+                    "invoiceNumber": this.items[0].invoiceNumber,
+                    "invoiceDate": this.items[0].invoiceDate,
+                    "jym": this.items[0].jym
+                };
+                util.postRequest('/invoice/updateOcrInfoInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 109) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "number": this.items[0].number,
+                    "date": this.items[0].date,
+                    "time": this.items[0].time,
+                    "stationGetOn": this.items[0].stationGetOn,
+                    "stationGetOff": this.items[0].stationGetOff,
+                    "trainNumber": this.items[0].trainNumber,
+                    "seat": this.items[0].seat,
+                    "total": this.items[0].total,
+                    "name": this.items[0].name,
+                    "kind": this.items[0].kind,
+                    "serialNumber": this.items[0].serialNumber,
+                    "userId": this.items[0].userId,
+                    "type": this.items[0].type,
+                    "invoiceDatas": this.items[0].invoiceDatas
+                };
+                util.postRequest('/invoice/updateRailwayTicketInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!')
+                    } 
+                });
+            } else if (type == 116) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "type": this.items[0].type,
+                    'dateStart': this.items[0].dateStart,
+                    'dateEnd': this.items[0].dateEnd,
+                    'phone': this.items[0].phone
+                };
+                util.postRequest('/invoice/updateDidiItineraryInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    }
+                });
+            } else if (type == 108) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "place": this.items[0].place,
+                    "province": this.items[0].province,
+                    "invoiceDate": this.items[0].invoiceDate,
+                    "number": this.items[0].number,
+                    "mileage": this.items[0].mileage,
+                    "code": this.items[0].code,
+                    "date": this.items[0].date,
+                    "timeGetOn": this.items[0].timeGetOn,
+                    "timeGetOff": this.items[0].timeGetOff
+                };
+                util.postRequest('/invoice/updateTaxiTicketsInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 106) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "number": this.items[0].number,
+                    "code":this.items[0].code
+                };
+                util.postRequest('/invoice/updateQuotaInvoiceInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 111) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "fare": this.items[0].fare,
+                    "userName": this.items[0].userName,
+                    "number": this.items[0].number,
+                    "date": this.items[0].date,
+                    "checkCode": this.items[0].checkCode,
+                    "caacDevelopmentFund": this.items[0].caacDevelopmentFund,
+                    "issueBy": this.items[0].issueBy
+                };
+                util.postRequest('/invoice/updateFlightItineraryInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 110) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "name": this.items[0].name,
+                    "code": this.items[0].code,
+                    "time": this.items[0].time,
+                    "number": this.items[0].number,
+                    "date": this.items[0].date,
+                    "stationGetOff": this.items[0].stationGetOff,
+                    "stationGetOn": this.items[0].stationGetOn
+                };
+                util.postRequest('/invoice/updatePassengerTicketInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 104) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "buyer": this.items[0].buyer,
+                    "buyerId": this.items[0].buyerId,
+                    "carCode": this.items[0].carCode,
+                    "carEngineCode": this.items[0].carEngineCode,
+                    "carModel": this.items[0].carModel,
+                    "certificateNumber": this.items[0].certificateNumber,
+                    "province": this.items[0].province,
+                    "city": this.items[0].city,
+                    "code": this.items[0].code,
+                    "date": this.items[0].date,
+                    "machineCode": this.items[0].machineCode,
+                    "machineNumber": this.items[0].machineNumber,
+                    "number": this.items[0].number,
+                    "pretaxAmount": this.items[0].pretaxAmount,
+                    "seller": this.items[0].seller,
+                    "sellerPhone": this.items[0].sellerPhone,
+                    "sellerTaxId": this.items[0].sellerTaxId,
+                    "tax": this.items[0].tax,
+                    "taxAuthorities": this.items[0].taxAuthorities,
+                    "taxAuthoritiesCode": this.items[0].taxAuthoritiesCode,
+                    "taxRate": this.items[0].taxRate
+                };
+                util.postRequest('/invoice/updateMotorVehicleSaleInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 115) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "currencyCode": this.items[0].currencyCode,
+                    "discount": this.items[0].discount,
+                    "storeName": this.items[0].storeName,
+                    "subtotal": this.items[0].subtotal,
+                    "tax": this.items[0].tax,
+                    "tips": this.items[0].tips,
+                    "time": this.items[0].time,
+                    "date": this.items[0].date
+                };
+                util.postRequest('/invoice/updateReceiptInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 113) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "code": this.items[0].code,
+                    "exit": this.items[0].exit,
+                    "number": this.items[0].number,
+                    "entrance": this.items[0].entrance
+                };
+                util.postRequest('/invoice/updateTollRoadsInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 112) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "code": this.items[0].code,
+                    "name": this.items[0].name,
+                    "city": this.items[0].city,
+                    "currencyCode": this.items[0].currencyCode,
+                    "time": this.items[0].time,
+                    "date": this.items[0].date,
+                    "stationGetOn": this.items[0].stationGetOn,
+                    "stationGetOff": this.items[0].stationGetOff
+                };
+                util.postRequest('/invoice/updateSteamerTicketInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 105) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "total": this.items[0].total,
+                    "buyer": this.items[0].buyer,
+                    "buyerId": this.items[0].buyerId,
+                    "carCode": this.items[0].carCode,
+                    "carEngineCode": this.items[0].carEngineCode,
+                    "carModel": this.items[0].carModel,
+                    "province": this.items[0].province,
+                    "city": this.items[0].city,
+                    "code": this.items[0].code,
+                    "companyName": this.items[0].companyName,
+                    "companyTaxId": this.items[0].companyTaxId,
+                    "date": this.items[0].date,
+                    "licensePlate": this.items[0].licensePlate,
+                    "number": this.items[0].number,
+                    "registrationNumber": this.items[0].registrationNumber,
+                    "seller": this.items[0].seller,
+                    "sellerId": this.items[0].sellerId
+                };
+                util.postRequest('/invoice/updateUsedCarSalesInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 103) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    "buyer": this.items[0].buyer,
+                    "buyerTaxId": this.items[0].buyerTaxId,
+                    "date": this.items[0].date,
+                    "code": this.items[0].code,
+                    "machineNumber": this.items[0].machineNumber,
+                    "number": this.items[0].number,
+                    "seller": this.items[0].seller,
+                    "sellerTaxId": this.items[0].sellerTaxId
+                };
+                util.postRequest('/invoice/updateMotorVehicleSaleInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    } 
+                });
+            } else if (type == 107) {
+                data = {
+                    "fileId": this.items[0].fileId,
+                    'total': this.items[0].total,
+                    "buyer": this.items[0].buyer,
+                    "buyerTaxId": this.items[0].buyerTaxId,
+                    "date": this.items[0].date,
+                    "code": this.items[0].code,
+                    "checkCode": this.items[0].checkCode,
+                    "province": this.items[0].province,
+                    "seller": this.items[0].seller,
+                    "billDate": this.items[0].billDate,
+                    "sellerTaxId": this.items[0].sellerTaxId
+                };
+                util.postRequest('/invoice/updateMotorVehicleSaleInvoce', data, {
+                    emulateJSON: true
+                }).then(function (res) {
+                    if (res.body.status == '2') {
+                        util.showModelTip('success','修改成功!');
+                    }
+                });
+            }
 
         }
     }
@@ -385,9 +676,9 @@ export default {
     height: auto;
     font-size: 10pt;
     border-radius: 5px;
-    z-index: 99999;
+    z-index: 9999;
     position: relative;
-    background: linear-gradient(120deg, #b0ffc0, #9cccff);
+    background: linear-gradient(120deg, #7df395, #7dbafa);
 
      .image-info{
         color: white;
@@ -402,9 +693,8 @@ export default {
     }
 
     .ocrInfo{
-        margin: 5px 0px;
-        
-        width: 275px !important;
+        margin: 0px;
+        width: 270px !important;
         
         div{
             color: white;
@@ -428,7 +718,6 @@ export default {
         flex: 1;
         overflow-y: auto;
         overflow-x: hidden;
-        margin-top: 55px;
         border: 0px !important;
         background: transparent !important;
     }

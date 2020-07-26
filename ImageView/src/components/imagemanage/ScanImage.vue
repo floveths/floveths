@@ -36,7 +36,7 @@
                         </li>
                         <li>
                             <div class="smallcode" v-show="showSmallCode" ><img src="../../../public/static/logo.png" /></div>
-                            <el-button type="primary" @mouseenter.native="showSmallCode=true" @click="$store.commit('showAppFolder','true')" @mouseleave.native="showSmallCode=false" size="mini">
+                            <el-button type="primary" @mouseenter.native="showSmallCode=true" @click="viewAppFolderOrPool" @mouseleave.native="showSmallCode=false" size="mini">
                                <i class="el-icon-picture"></i> 我的影像</el-button>
                         </li>
                         
@@ -125,11 +125,11 @@
         </el-container>
 
         <transition name="up">
-            <smallappfolder v-show="$store.state.showAppFolder" @showAppPoolView="showAppPool=true"></smallappfolder>
+            <smallappfolder v-if="showAppFolder" @showApplicationFolder="showAppFolder=false" @showAppPoolView="showAppPool=true"></smallappfolder>
         </transition>
         
         <transition name="up">    
-            <smallapppool v-if="showAppPool" @closeAppPool="closeAppImagePool" :user="userNo" @showAppBigImg="showAppPoolImage"></smallapppool>
+            <smallapppool v-if="showAppPool" @closeAppPool="showAppPool = false" @showAppBigImg="showAppPoolImage"></smallapppool>
         </transition>
         
         <transition name="up">    
@@ -156,7 +156,7 @@
 </template>
 
 <script>
-/* import $ from 'jquery' */
+
 import par from '../../utils/param'
 import util from '../../utils/util'
 import '../../assets/css/ztree.css'
@@ -165,7 +165,7 @@ import correctImage from '../pubcomponent/imagebox/CorrectImage'
 import imageDialog from '../pubcomponent/imagedialog/ImageModelDialog'
 import initStateProgress from '../pubcomponent/imagebox/InitStateProgress'
 import imageComponent from '../../components/pubcomponent/imagebox/ImageComponent'
-import fileListView from '../../components/pubcomponent/filemanage/FileView'
+import fileListView from '../../components/pubcomponent/filemanage/FileViewBox'
 import smallAppFolder from '../../components/pubcomponent/smallappfolder/AppFolder'
 import fileUpload from '../../components/pubcomponent/fileupload/FileUploadTemp'
 import smallApppool from '../../components/pubcomponent/smallappfolder/smallapppool/AppPool'
@@ -180,6 +180,7 @@ export default {
             'showFileListBar' : true,
             'showAttachBox' : true,
             'showAppPool' : false,
+            'showAppFolder' : false,
 
             'lang' : '',
             'showBar' : false,
@@ -224,13 +225,14 @@ export default {
     },
     beforeMount : function(){
 
-        util.initWS();
+        par.userNo = 'admin';
+        
         this.lang = this.$store.state.defaultLang;
         this.langOptions = this.$store.state.langOptions;
-    },
-    mounted : function(){
 
-        util.getRequest('/imageUploadServices/1001A81000000005W16Y',(res)=>{
+    },
+    mounted(){
+        util.getRequest('/imageUploadServices/0001A91000000000Z34K',(res)=>{
 
             if(res.body.status=="200"||res.body.status==200){
                 par.batchId.push(res.body.data.batchId);
@@ -249,6 +251,7 @@ export default {
             }
             
         });
+        util.initWS();
         util.initTreeNode();
     },
     methods:{
@@ -281,10 +284,11 @@ export default {
             if(this.deviceValue==""||this.deviceValue==null){
                 util.showModelTip('warning','请先选择扫描仪!');
 				return false;
-			}
-			var obj = {"InterFace": "Scan","DeviceName": this.deviceValue,'ControlEncryption' : 0,'DoubleSide': parseInt(this.dviceOptions),'DPI': 300,'ShowUI': 0,'ShowProcess': 0,'Rote': 360,'Color': 3,'Ocr': parseInt(par.ocrPort),'Ip': par.serverIp.toString(),'Port': parseInt(par.serverPort),'SocketPort': parseInt(par.socketPort),'Type': parseInt(1)};
+            }
+            
+			var obj = {"InterFace": "Scan","DeviceName": this.deviceValue,'ControlEncryption' : 0,'DoubleSide': parseInt(this.pageOp),'DPI': 300,'ShowUI': 0,'ShowProcess': 0,'Rote': 360,'Color': 3,'Ocr': parseInt(par.ocrPort),'Ip': par.serverIp.toString(),'Port': parseInt(par.serverPort),'SocketPort': parseInt(par.socketPort),'Type': parseInt(1)};
             this.isSave = 0;//重新初始化未保存
-            par.ws.send(JSON.stringify(obj));
+            util.sendInfo(JSON.stringify(obj));
         },
         importBtn(){
             document.getElementById('importFile').click();
@@ -309,7 +313,6 @@ export default {
                 
             }
 
-            this.$store.state.initImportCount = par.uploadImgCount;
             util.uploadFiles(par.uploadFileArr);
         },
         delImg(){
@@ -319,9 +322,55 @@ export default {
                 util.showModelTip('warning','请先选择要删除的影像!');
                 return false;
             }
-            
+
             let parm = {"businessSerialNo": par.businessSerialNo,"fileId":delArr};
-            util.deleteRequest("/imageUploadServices",{body:parm});  
+            util.deleteRequest("/imageUploadServices",{body:parm},(res)=>{
+                let arr = par.imgData;
+                if(res.body.status == '200'||res.body.status == 200){
+
+                    
+                    arr.find((k,i)=>{
+                        k.children.find((s,j)=>{
+                            par.pickImage.find((o)=>{
+                                
+                                window.console.log(s.fielId == o);
+                                if(s.fielId == o){
+                                    k.typeNum--;
+                                    if(k.isUpload == false){
+                                        this.$store.commit('changeUploadImgCount','-');
+                                    }
+                                    par.imgData[i].children.splice(j,1);
+                                }
+                            })
+                        })
+                    })
+
+                    
+                    /* for(let i=0;i<arr.length;i++){
+                        let carr = arr[i].children;
+                        for(let k=0;k<carr.length;k++){
+                            for(let o=0;o<par.pickImage.length;o++){
+                                window.console.log(carr[k].fielId == par.pickImage[o],carr[k].fielId , par.pickImage[o])
+                                if(carr[k].fielId == par.pickImage[o]){
+                                
+                                    if(carr[k].isUpload == false){
+                                        this.$store.commit('changeUploadImgCount','-');
+                                    }
+                                    par.imgData[i].typeNum--;
+                                    par.imgData[i].children.splice(k,1);
+                                }
+                            }
+                            
+                        }
+                    } */
+                   
+                }
+            });  
+            let arr = document.getElementsByClassName('img-thumbnails');
+            for(let o=0;o<arr.length;o++){
+                arr[o].style.border = '1px solid #ddd';
+            }
+             //par.pickImage = [];//清空数组
         },
         revertImg(){
 
@@ -355,15 +404,19 @@ export default {
             this.dialogBarType = msg.barType;
 			this.isShowBigImg = true;
         },
+        viewAppFolderOrPool(){
+            let bool = this.$store.state.showAppFolder;
+            if(bool){
+                this.showAppFolder = true;
+            }else{
+                this.showAppPool = true;
+            }
+        },
         showAppPoolImage(msg){
             this.bigImgUrl = msg.url;
             this.appListData = msg.appPoolData;
             this.showOprationBar = true;
 			this.isShowBigImg = true;
-        },
-        closeAppImagePool(){
-            this.reloadData();
-            this.showAppPool = false;
         },
         closeDialogModel(msg){
             let isRotate = msg.rotate;
@@ -419,7 +472,7 @@ export default {
         },
         saveImg(){
 
-            var count = par.uploadImgCount;
+            var count = this.$store.state.uploadImgCount;
             if(count <= 0){
 				util.showModelTip('warning','暂无可上传影像!');
 				return false;
@@ -435,25 +488,24 @@ export default {
             
             var objmsg = {InterFace: "Upload",Ip: par.serverIp.toString(),Port: parseInt(par.serverPort),SocketPort: parseInt(par.socketPort),Type: parseInt(1),files: uploadImages}
             par.ws.send(JSON.stringify(objmsg));
-
             this.$store.commit('showImageUpload');
-            this.$store.commit('changeUploadImgCount',count);
+            
         },
         showAside(par){
             if(par=='left'){
                 this.showLeftContent =! this.showLeftContent; 
                 if(this.showLeftContent){
-                    this.leftAsideWidth = {"transition":"all .3s linear","width":"300px"};
+                    this.leftAsideWidth = {"transition":"all 0.8s ease 0s","width":"300px"};
                 }else{
-                    this.leftAsideWidth = {"transition":"all .3s linear","width":"30px"};
+                    this.leftAsideWidth = {"transition":"all 0.8s ease 0s","width":"30px"};
                 }
                 
             }else if(par=='right'){
                 this.showRightContent =! this.showRightContent; 
                 if(this.showRightContent){
-                    this.rightAsideWidth = {"transition":"all .3s linear","width":"300px"};
+                    this.rightAsideWidth = {"transition":"all 0.8s ease 0s","width":"300px"};
                 }else{
-                    this.rightAsideWidth = {"transition":"all .3s linear","width":"30px"};
+                    this.rightAsideWidth = {"transition":"all 0.8s ease 0s","width":"30px"};
                 }
                 
             }
@@ -487,13 +539,13 @@ export default {
 }
 
 .scanHead {
-    background-color: rgb(255, 255, 255);
     color: #333;
     position: fixed;
     z-index: 1;
     width: 100%;
     display: flex;
     padding: 0px 65px;
+    background: #485159;
     height: 50px !important;
     justify-content: space-between;
     box-shadow: 0 1px 4px 0 rgba(0,21,41,.08);
@@ -552,10 +604,10 @@ export default {
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        box-shadow: 0px 2px 4px #ddd;
         cursor: pointer;
         position: relative;
         background: white;
+        box-shadow: 0px 2px 8px #162633;
     }
     .menuBar::after{
         content: '';
@@ -590,9 +642,10 @@ export default {
         z-index: -2;
         display: flex;
         overflow: hidden;
+        background: #485159;
         justify-content: center;
-        background: white;
-        box-shadow: 0px 3px 5px #eaeaea;
+        border: 1px solid #5e5e5e;
+        box-shadow: 0px 3px 5px #2a3e51;
 
         > ul li{
             list-style: none;
@@ -617,12 +670,14 @@ export default {
 
 .scanMain {
     overflow-y: auto;
+    padding: 5px !important;
 }
 
 .asideLeftContent,.asideRightContent{
     position: relative;
     display: flex;
     justify-content: space-between;
+
     .content{
         height: calc(100vh - 50px);
         width: 330px;   
@@ -630,6 +685,7 @@ export default {
         position: relative;
         box-shadow: 0px 5px 10px #ddd6d6;
     }
+
     .contentBar{
         width: 30px;
         font-size: 24pt;
@@ -637,7 +693,6 @@ export default {
         /* border: 1px solid #f7f7f7; */
         line-height: calc(100vh - 60px);
     }
-  }
 
-
+}
 </style>

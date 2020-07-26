@@ -11,14 +11,16 @@
                     <span style="margin:5px 15px;line-height:2;font-size:13pt;">只查询:</span>
                     <template>
                         <el-select v-model="qselect" @change="getType" placeholder="全部" size="mini">
-                            <el-option v-for="item in typeOptions"
-                            :key="item.fileType" :label="item.statuName"
-                            :value="item.fileType"> </el-option>
+                            <el-option v-for="items in typeOptions"
+                            :key="items.fileType" :label="items.statuName"
+                            :value="items.fileType"> </el-option>
                         </el-select>
                     </template>
                 </div>
                 <div class="appBoxCloseBar" >
-                    <i class="el-icon-close" @click="closeAppPool"></i>
+                    <!-- <i class="el-icon-close" @click="closeAppPool"></i> -->
+                    <button type="button" @click="closeAppPool" class=" btn btn-cancel ">
+                    <i class="el-icon-circle-close" ></i></button>
                 </div>
             </div>
             <div class="appBoxCenter">
@@ -54,8 +56,7 @@
                     <button type="button" @click="btnSure" class=" btn btn-upload ">
                     <i class="el-icon-circle-check" ></i> 确定</button>
                 
-                    <button type="button" @click="closeAppPool" class=" btn btn-cancel ">
-                    <i class="el-icon-circle-close" ></i> 关闭</button>
+                    
                     
                 </div>
             </div>
@@ -73,8 +74,8 @@
 import util from '../../../../utils/util.js'
 import par from '../../../../utils/param.js'
 import ocrTemplate from '../../ocrtemp/OcrListTemplate'
+
 export default {
-    props : ['user'],
     data(){
         return {
             'appId' : '',
@@ -95,11 +96,11 @@ export default {
         'ocrtemplate' : ocrTemplate
     },
     beforeMount (){
-        util.getRequest(`/appApi/getImageTypes/${this.user}`,(res)=>{
+        /* util.getRequest(`/appApi/getImageTypes/${par.userNo}`,(res)=>{
             this.typeOptions = this.typeOptions.concat(res.body.data);
-        });
+        }); */
 
-        this.getData('null');
+        this.getData();
     },
     methods : {
         getWxImgOcrInfo (e){
@@ -114,7 +115,7 @@ export default {
                     }
                 }
 
-            })
+            });
             this.offSetStyle = {'margin-left':e.clientX+'px','margin-top': e.clientY+'px'};
         },
         showAppBigImg(e){
@@ -127,8 +128,9 @@ export default {
             this.getData(type);
             this.qselect = type;
         },
-        getData(type){
-            util.getRequest(`/appApi/getImageList/${this.user}/${type}/${this.curPage}/18?t=674`,(res)=>{
+        getData(){
+            let type = this.$store.state.appFolderId;
+            util.getRequest(`/appApi/getImage/${par.userNo}/${type}/${this.curPage}/18?t=674`,(res)=>{
                 
                 this.curPage = res.body.data.number;
                 this.appListData = res.body.data.files;
@@ -140,7 +142,6 @@ export default {
                 util.showModelTip('请先选择影像','warning');
                 return false;
             }
-            window.console.log(this.pickImg);
             
             for(let p=0;p<this.appListData.length;p++){
                 for(let s=0;s<this.pickImg.length;s++){
@@ -150,12 +151,13 @@ export default {
                         let index = util.addTypeNum(par.nodeId);
                         let fileName = this.appListData[p].fileName;
                         let imgId = par.nodeId+''+par.imgData[index].typeNum;
-                        let child = {'id': imgId,'name':fileName,'imageSrc':this.appListData[p].url,'fielId':this.pickImg[s],'imgName':fileName,'isUpload':false,'curImgIndex':par.curImgIndex,'imgTip':'','sliceTip':'','show':true,'fileSize':'0'};
+                        let child = {'id': imgId,'name':fileName,'imageSrc':this.appListData[p].url,'fielId':this.pickImg[s],'imgName':fileName,'isUpload':false,'curImgIndex':par.curImgIndex,'imgTip':'','sliceTip':'','show':true,'fileSize':'0KB'};
                         
                         par.uploadImageArr.push(child);//存放要上传的图片 上传使用
                         par.imgData[index].children.push(child); //树
-                        par.imgTotalArr.push({'imageSrc':this.appListData[p].url,'imgFielId':this.pickImg[s],'isUpload':false});//存储图片 查看大图时使用
+                        par.imgViewArr.push({'pId':'p-'+index,"cId":'c-'+(par.imgData[index].children.length-1)});//存储图片 查看大图时使用
                         this.$store.commit('changeImgCount','+');
+                        this.$store.commit('changeUploadImgCount','+');
                         par.ticketNodes[0].children[index] = par.imgData[index];
                     }
                 }
@@ -299,7 +301,8 @@ export default {
 	height: 80%;
 	padding: 10px;
 	cursor: pointer;
-	overflow-x: hidden;
+    overflow-x: hidden;
+    background: white;
 }
 
 .appBoxBottom{
@@ -310,7 +313,7 @@ export default {
 }
 
 .appBoxPageList{
-    flex: 2;
+    flex: 3;
     padding: 0px 10px;
 }
 
@@ -354,7 +357,7 @@ export default {
     display: inline-block;
     position: absolute;
     cursor: pointer;
-    margin: 20px 25px !important;
+    margin: 10px 10px !important;
     border: 1px solid #c6c6c6;
 }
 

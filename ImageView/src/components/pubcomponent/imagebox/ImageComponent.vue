@@ -42,7 +42,7 @@
 								<div class=" col-md-3 col-sm-3 col-xs-6 " v-for="(data,index) in attchListData" v-bind:key="index">
 									<div class="img-thumbnails" >
 										<img v-bind:src="data.fileIcon" @dblclick="viewPdfDoc" v-bind:name="data.fileId"  >	
-										<input type="text" :value="data.fileName" class="reImgName" v-bind:name="data.fielId" v-on:blur="fileReName"/>
+										<input type="text" :value="data.fileName" class="reImgName" readonly="readonly" v-bind:name="data.fielId" v-on:blur="fileReName"/>
 									</div>
 								</div>
 							</div>
@@ -144,8 +144,6 @@ export default {
 	},
 	methods : {
 		showBigImg(e){
-			
-			let msg = {'url':e.target.src,'fileId':e.target.name,'barType':1};
 
 			let index = 0;
 			let cId = e.target.id;
@@ -157,8 +155,35 @@ export default {
                 }
             });
 
+			
+			let url = '';
+			pId = par.imgViewArr[index].pId;
+			cId = par.imgViewArr[index].cId;
+			
+			pId = pId.split('-');
+			cId = cId.split('-');
+			let type = par.imgViewArr[index].type;
+			if(type == 'i'){
+				url = par.imgData[pId[1]].children[cId[1]].imageSrc;
+				let msg = {'url':url,'fileId':e.target.name,'barType':1};
+				this.$emit('showBigImg',msg)
+			}else if(type == 's'){
+				let fileId = par.imgData[pId[1]].children[cId[1]].fielId;
+				var msg = {
+					"InterFace" : "GetFullImage",
+					"FileId" : fileId 
+				};
+				util.sendInfo(JSON.stringify(msg));
+				window.setTimeout(() => {
+					util.showBigImgFromActive(null,(res)=>{
+						let msg = {'url':res,'fileId':e.target.name,'barType':1};
+						this.$emit('showBigImg',msg)
+					});
+				}, 1500);
+			}
+			
 			this.$store.commit('changeImgIndex',index);
-			this.$emit('showBigImg',msg)
+			
 		},
 		showCutImg(e){
 			
@@ -227,26 +252,30 @@ export default {
 				var bool = par.imgData[index].children[imgIdex].isUpload;
 				par.imgData[index].children.splice(imgIdex,1);
 				let pId = index, cId = imgIdex;
-				this.dragDelete = [];//立即清空;
-				if(!bool){
-					
-					
-					let uploadArr = par.uploadImageArr.filter((i)=>{
-						return i.fielId != imgFileId ;
-					});
+				
+				let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.dragDelete};
+				util.deleteRequest("/imageUploadServices",{body:parm},(res)=>{
+					if(res.body.status == 200){
+						let uploadArr = par.uploadImageArr.filter((i)=>{
+							return i.fielId != imgFileId ;
+						});
 
-					let viewArr = par.imgViewArr.filter((e)=>{
-						return e.pId != pId && e.cId != cId;
-					});
-
-					par.uploadImgCount-=1;
-					par.imgViewArr = viewArr;
-					par.uploadImageArr = uploadArr;
-					this.$store.commit('changeImgCount','-');
-
-				}else{
-					Util.postRequest();
+						let viewArr = par.imgViewArr.filter((e)=>{
+							return e.pId != pId && e.cId != cId;
+						});
+						
+						par.imgViewArr = viewArr;
+						par.uploadImageArr = uploadArr;
+						this.$store.commit('changeImgCount','-');
+					}else{
+						util.showModelTip('warning','删除失败!');
+						return false;
+					}
+				})
+				if(bool==false){
+					this.$store.commit('changeUploadImgCount','-');
 				}
+				this.dragDelete = [];//立即清空;
 			}
 			Util.reloadTree();
 		},
@@ -308,8 +337,8 @@ export default {
 
 
 .panel{
-    box-shadow: 0px 0px 25px #bbb !important;
-    background: white !important;
+	background: white !important;
+	box-shadow: 0px 5px 20px #a8a8a8 !important;
 }
 
 .panel-default{

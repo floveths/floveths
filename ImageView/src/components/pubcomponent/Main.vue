@@ -43,6 +43,7 @@
                                 <router-link :to="{name:'scanimage'}" ><el-menu-item index="1-2">选项2</el-menu-item></router-link>
                                 <router-link :to="{name:'queryimage'}" ><el-menu-item index="1-3">影像查询</el-menu-item></router-link>
                                 <router-link :to="{name:'queryticket'}"><el-menu-item index="1-4">发票查询</el-menu-item></router-link>
+                                <router-link :to="{name:'viewimage'}"><el-menu-item index="1-5">发票查看</el-menu-item></router-link>
                             </el-menu-item-group>
                         </el-submenu>
 

@@ -8,7 +8,7 @@ import I18n from './lang/i18n'
 import ReSource from 'vue-resource'
 import '../src/assets/css/bootstrap.css'
 import '../src/assets/js/jquery.ztree.core.js'
-import '../src/assets/js/jquery.ztree.exedit.js'
+import '../src/assets/js/jquery.ztree.exedit.js' 
 
 Vue.use(Echarts);
 Vue.use(ReSource);

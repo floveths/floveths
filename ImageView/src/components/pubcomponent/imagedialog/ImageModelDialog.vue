@@ -42,22 +42,15 @@
                     <div class="rotateBarContent">
                         <p class="rotateText" id="rotateText" >0°</p>
                         <div class="rotateProgress" id="rotateProgress"></div>
-                        <div class="rotateCircle" id="rotateCircle" @mousedown="slideBarToTransfer"></div>
+                        <div class="rotateCircle" id="rotateCircle" ></div>
                     </div>
                     <span>360°</span>
                     <i class="el-icon-minus" v-on:click="bigImage(2)"></i>
                 </div>
                 <div class="cutSamllImg" v-if="barType==3">
 
-                    <div>
-                        <img src="https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=2534506313,1688529724&fm=26&gp=0.jpg" />
-                    </div>
-
-                    <div>
-                        <img src="https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=2534506313,1688529724&fm=26&gp=0.jpg" />
-                    </div>
-                    <div>
-                        <img src="https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=2534506313,1688529724&fm=26&gp=0.jpg" />
+                    <div v-for="(item,i) in cutImgList" :key="i">
+                        <img :src="item.imgUrl" :id="item.fileId" @mouseover="getCurImgOcrInfo" />
                     </div>
 
                 </div>
@@ -78,11 +71,12 @@ export default {
         return {
             'bigImgStyle' : {},
             'imgUrl' : '',
+            'totalCount': 0,
             'cutImgList' : [],
             'ocrInfoList' : [],
             'showOcrList' : false,
-            'fromAppPool' : false,
-            'totalCount': 0
+            'fromAppPool' : false
+            
         };
     },
     components : {
@@ -110,8 +104,18 @@ export default {
                     //cutImgList
                     util.getRequest(`/imageServices/getImageCats?fileId=${this.ticketId}`,(res)=>{
                         window.console.log(res);
+                        if(res.body.status==200){
+                            this.cutImgList = res.body.data.imgList;
+                        }
                     });
                 }
+            }
+        },
+        barType(){
+            if(this.barType==2){
+                window.setTimeout(()=>{
+                    this.slideBarToTransfer();
+                },500)
             }
         }
     },
@@ -137,25 +141,7 @@ export default {
                 return false;
             }else{
                 curIndex--;
-                if(this.fromAppPool){
-                
-                    this.imgUrl = this.appPoolData[curIndex].url;
-                }else{
-                    
-                    let pId = par.imgViewArr[curIndex].pId;
-                    let cId = par.imgViewArr[curIndex].cId;
-
-                    pId = pId.split('-');
-                    cId = cId.split('-');
-                    
-                    this.imgUrl = par.imgData[pId[1]].children[cId[1]].imageSrc;
-                    this.getOcrInfo(par.imgData[pId[1]].children[cId[1]].fielId);
-                }
-
-                this.$store.commit('changeImgIndex',curIndex);
-                let ImageBox = document.getElementById('ImageBox');
-                ImageBox.style.marginTop = 'auto';
-                ImageBox.style.marginLeft = 'auto';
+                this.loadImage(curIndex);
             }
         },
         slideImgRight : function(){
@@ -165,28 +151,8 @@ export default {
                 util.showModelTip('warning','已经是最后一张图片了');
                 return false;
             }else{
-                
                 curIndex++;
-                if(this.fromAppPool){
-                    this.imgUrl = this.appPoolData[curIndex].url;
-
-                }else{
-                    
-                    let pId = par.imgViewArr[curIndex].pId;
-                    let cId = par.imgViewArr[curIndex].cId;
-
-                    pId = pId.split('-');
-                    cId = cId.split('-');
-                    
-                    this.imgUrl = par.imgData[pId[1]].children[cId[1]].imageSrc;
-                    this.getOcrInfo(par.imgData[pId[1]].children[cId[1]].fielId);
-                }
-
-                this.$store.commit('changeImgIndex',curIndex);
-                let ImageBox = document.getElementById('ImageBox');
-                ImageBox.style.marginTop = 'auto';
-                ImageBox.style.marginLeft = 'auto';
-                
+                this.loadImage(curIndex);
             }
         },
         getOcrInfo(id){
@@ -194,7 +160,7 @@ export default {
             util.getRequest(`/webShowImage/invoiceInfo/${id}`,(res)=>{
 
                 if(res.body.status == "200"||res.body.status == 200){
-                    if(res.body.data.length>0){
+                    if(res.body.data.length>0 &&res.body.data!=null){
                         this.showOcrList = true;
                         this.ocrInfoList = res.body.data;
                     }else{
@@ -204,45 +170,87 @@ export default {
                 }
             });
         },
-        slideBarToTransfer(e){
+        slideBarToTransfer(){
             
             let pageX = 0;
-            let offSetX =0;
-            let cirCleleft = 0;
+            let Left = 0;
+            let _this = this;
+
             var circle = document.getElementById('rotateCircle');
             var rotateText = document.getElementById("rotateText");
             var rotateProgress = document.getElementById("rotateProgress");
 
-            pageX = e.pageX;
-            let _this = this;
-            document.onmousemove = function(es){
-                
-                offSetX = es.pageX;
-                if(offSetX - pageX > 220){
-                    cirCleleft = 220;
-                }else if(offSetX - pageX <= 0){
-                    var left = parseInt(circle.style.marginLeft);
-                    
-                    cirCleleft = (left - (pageX - offSetX));
-                    if(cirCleleft <= 0){
-                        cirCleleft = 0;
+            circle.onmousedown = function(e){
+
+                window.onmousemove = function(es){
+
+                    Left = circle.style.marginLeft;
+                    if(Left==''||Left==null){
+                        Left = 0;
+                    }else{
+                        Left = parseInt(Left);
                     }
-                }else{
-                    cirCleleft = (offSetX-pageX);
+                    pageX = (es.pageX - e.pageX) + Left;
+                    if(pageX <= 0){
+                        pageX = 0;
+                    }else if(pageX >= 220){
+                        pageX = 220;
+                    }
+                    
+                    circle.style.marginLeft = pageX +'px';
+                    rotateProgress.style.width = pageX + 'px';
+                    par.rotatez = Math.floor(pageX * 1.64);
+                    rotateText.innerText =  par.rotatez + '°';
+                    _this.bigImage('r');
+
                 }
-                
-                circle.style.marginLeft = cirCleleft +'px';
-                rotateProgress.style.width = cirCleleft + 'px';
-                par.rotatez = Math.floor(cirCleleft * 1.64);
-                rotateText.innerText =  par.rotatez + '°';
-                _this.bigImage('r');
             }
             
-            document.onmouseup = function(){
-                document.onmousemove = null;
+            window.onmouseup = function(){
+                window.onmousemove = null;
                 return false;
             }
             
+        },
+        loadImage(curIndex){
+            if(this.fromAppPool){
+                
+                this.imgUrl = this.appPoolData[curIndex].url;
+            }else{
+                
+                let pId = par.imgViewArr[curIndex].pId;
+                let cId = par.imgViewArr[curIndex].cId;
+
+                pId = pId.split('-');
+                cId = cId.split('-');
+                let type = par.imgViewArr[curIndex].type;
+                if(type == 'i'){
+                    this.imgUrl = par.imgData[pId[1]].children[cId[1]].imageSrc;
+                }else if(type == 's'){
+                    let fileId = par.imgData[pId[1]].children[cId[1]].fielId;
+                    var msg = {
+                        "InterFace" : "GetFullImage",
+                        "FileId" : fileId 
+                    };
+                    util.sendInfo(JSON.stringify(msg));
+                    window.setTimeout(() => {
+                        util.showBigImgFromActive(null,(res)=>{
+                            this.imgUrl = res;
+                        });
+                    }, 1500);
+                }
+                
+                this.getOcrInfo(par.imgData[pId[1]].children[cId[1]].fielId);
+            }
+
+            this.$store.commit('changeImgIndex',curIndex);
+            let ImageBox = document.getElementById('ImageBox');
+            ImageBox.style.marginTop = 'auto';
+            ImageBox.style.marginLeft = 'auto';
+        },
+        getCurImgOcrInfo(e){
+            let id = e.target.id;
+            this.getOcrInfo(id);
         }
     }
  
@@ -327,7 +335,7 @@ export default {
         .imgContentBoxRight{
             flex: 1;
             height: 90vh;
-            overflow-y: auto;
+            padding-top: 45px;
         }
 
     }

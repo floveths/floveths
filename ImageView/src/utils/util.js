@@ -5,19 +5,24 @@ import { Message } from 'element-ui';
 import {MessageBox} from 'element-ui'
 import {Notification} from 'element-ui'
 
-import par from '../utils/param' 
-import store from '../stores/store'
+import Par from '../utils/param' 
+import Store from '../stores/store'
+import Router from '../router/router'
 
 vueObj.use(Resouce);
+let imgUrl = '';
+let ws = new WebSocket("ws://127.0.0.1:11345/Laputa");
 
 const Util = {
 
     initWS : function(){
         
-        let ws = par.ws;
-        ws.onopen = function(){
-            ws.send("发送数据");
-        }
+        ws.onopen = function() {
+            var obj = {"InterFace": "GetDevice"};
+            ws.send(JSON.stringify(obj));
+            
+        };
+
         ws.onmessage = function (e) 
         { 
             var obj = JSON.parse(e.data);
@@ -25,7 +30,7 @@ const Util = {
             if (obj.InterFace == "GetDevice") {
                 Util.buildDeviceDDL(obj);
             } else if (obj.InterFace == "GetFullImage") {
-                Util.showBigImgFromActive(obj,null,null);
+                Util.showBigImgFromActive(obj);
             } else if (obj.InterFace == "Upload") {
                 Util.uploadComplete(obj);
             } else if (obj.InterFace == "GetNICVersion"){
@@ -83,71 +88,77 @@ const Util = {
                 
                 Util.buildGrid(obj);
             } else if (obj.InterFace == "Transmission_WebToLocal") {
-                /* if (obj.RstCode == "0000") {
-                    if(vue.isRotateImg){
-                        vue.progress = 100;
-                        vue.gressValue = '100%';
-                        obj = null;
-                    }
-                } */
-                store.commit('showImgByFileId',obj.FileId);
+                Store.commit('showImgByFileId',obj.FileId);
             } 
         };
         
         ws.onclose = function()
         { 
-            let func = function(){
-                window.location.href = '';
-            }
             MessageBox.confirm('检测到系统未打开控件，是否下载?','提示',{
                 confirmButtonText : '确定',
                 cancelButtonText : '取消',
                 type :'warning'
             }).then(()=>{
-                func();
+               Router.push('/downcontrol');
             });
+
+            Util.initWS();
         };
 
+    },
+    sendInfo : function(obj){
+        ws.send(obj);
     },
     buildDeviceDDL : function(obj) {
         if (obj.DeviceNames == undefined) {
             Util.showModelTip('warning',"未找到任何设备!");
         } else {
+            
             for (var i = 0; i < obj.DeviceNames.length; i++) {
-                par.deviceOptions.push({'label':obj.DeviceNames[i],'value':obj.DeviceNames[i]});
+                Par.deviceOptions.push({'label':obj.DeviceNames[i],'value':obj.DeviceNames[i]});
             }
         }
     },
     /*扫描仪画图 */
     buildGrid : function(obj){
-        window.console.log(obj)
 
         var fileName = '';
-        if(par.scanType==2){
-            /* par.nodeId = obj.BusinessSerialNo;
-            par.nodeName = par.nodeId+"_"+(vue.numIndex+1)+".jpg"; */
-            /* fileName = par.nodeId+"_"+(vue.numIndex+1)+".jpg"; */
+        if(Par.scanType==2){
+            /* Par.nodeId = obj.BusinessSerialNo;
+            Par.nodeName = Par.nodeId+"_"+(vue.numIndex+1)+".jpg"; */
+            /* fileName = Par.nodeId+"_"+(vue.numIndex+1)+".jpg"; */
         }else{
-            //par.nodeName = obj.FileName;	
-            fileName = obj.fileName;
+            //Par.nodeName = obj.FileName;	
+            fileName = obj.FileName;
         }
         
-        par.curImgIndex++;
-        par.uploadCount++;
-        let index = Util.addTypeNum(par.nodeId);
-        let imgId = par.nodeId+''+par.imgData[index].typeNum;
+        Par.curImgIndex++;
+        Par.uploadCount++;
+        let index = Util.addTypeNum(Par.nodeId);
+        let imgId = Par.nodeId+''+Par.imgData[index].typeNum;
         let fielId = obj.FileId;
         let imgUrl = "data:image/jpeg;base64," + obj.Base64;
-        let child = {'id': imgId,'name':fileName,'imageSrc':imgUrl,'fielId':fielId,'imgName':fileName,'isUplaod':false,'curImgIndex':par.curImgIndex};
+        let child = {'id': imgId,'name':fileName,'imageSrc':imgUrl,'fielId':fielId,'imgName':fileName,'isUplaod':false,'curImgIndex':Par.curImgIndex,'show':true};
         
-        par.uploadImageArr.push(child);//存放要上传的图片
-        par.imgData[index].children.push(child);
+        Par.uploadImageArr.push(child);//存放要上传的图片
+        Par.imgData[index].children.push(child);
 
-        par.imgTotalArr.push({'imageSrc':imgUrl,'imgFielId':fielId});//存储图片
-        par.nodes[0].children[index] = par.imgData[index];
-        $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
-        vueObj.$store.commit('changeImgCount');
+        Par.ticketNodes[0].children[index] = Par.imgData[index];
+        $.fn.zTree.init($("#treeDemo"), Par.setting, Par.ticketNodes);
+        Store.commit('changeImgCount','+');
+        Store.commit('changeUploadImgCount','+');
+        Par.imgViewArr.push({'pId':'p-'+index,"cId":'c-'+(Par.imgData[index].children.length-1),'type':'s'});
 
+    },
+    showBigImgFromActive(obj,v){
+        
+        if(obj!=null)
+        {
+            imgUrl = 'data:image/jpeg;base64,'+obj.Base64;
+        }else{
+             v(imgUrl);
+        }
+        
     },
     /*上传完成*/
     uploadComplete : function(obj){
@@ -178,7 +189,7 @@ const Util = {
                     break;
                 case 50:
 
-                    par.imgData[0].children.find((i)=>{
+                    Par.imgData.find((i)=>{
                         i.children.find((k)=>{
                             if(k.fielId == obj.FileId){
                                 k.cutImgCls = 'cutImg'
@@ -190,28 +201,28 @@ const Util = {
                 break;
             }
             
-            var num = Math.ceil(100/store.state.uploadImgCount);
-            if(par.uploadImgCount == store.state.curUploadCount){
-                //par.uploadImgCount = 0;
-                store.commit('changeUploadProgress',100);
+            var num = Math.ceil(100/Store.state.uploadImgCount);
+            if(Store.state.uploadImgCount == Store.state.curUploadCount){
+                
+                Store.commit('changeUploadProgress',100);
             }else{
-                var gress = (num * store.state.curUploadCount);
-                store.commit('changeCurUploadCount');
-                store.commit('changeUploadProgress',gress);
+                var gress = (num * Store.state.curUploadCount);
+                Store.commit('changeCurUploadCount');
+                Store.commit('changeUploadProgress',gress);
             }
             
         }
     },
     setInfo : function(fileId,flag){
         
-        if(par.scanType==1){
+        if(Par.scanType==1){
 
             let bool = false;
-            for(let s=0;s<par.imgData.length;s++){
-                for(let w=0;w<par.imgData[s].children.length;w++){
+            for(let s=0;s<Par.imgData.length;s++){
+                for(let w=0;w<Par.imgData[s].children.length;w++){
                     
-                    if(par.imgData[s].children[w].fielId == fileId){
-                        par.imgData[s].children[w].imgTip = flag;
+                    if(Par.imgData[s].children[w].fielId == fileId){
+                        Par.imgData[s].children[w].imgTip = flag;
                         bool = true;
                         break;
                     }
@@ -221,13 +232,13 @@ const Util = {
                 }
             }
 
-            /* par.tickArr.find(function(item,index){
+            /* Par.tickArr.find(function(item,index){
                 if(fileId==item.fileId){
-                     par.tickArr[index].isUpload = flag;
+                     Par.tickArr[index].isUpload = flag;
                      vue.tickArr[index].imgTip = type;
                      if(code==14){
-                         var str = {"fileId":vue.tickArr[index].fileId,"fileName":vue.tickArr[index].name,"parentNodeId":vue.tickArr[index].nodeId,"nodeId":vue.tickArr[index].id,"sort":vue.tickArr[index].index,"docName":vue.tickArr[index].docName};
-                         par.postImgArr.push(str);	
+                         var str = {"fileId":vue.tickArr[index].fileId,"fileName":vue.tickArr[index].name,"ParentNodeId":vue.tickArr[index].nodeId,"nodeId":vue.tickArr[index].id,"sort":vue.tickArr[index].index,"docName":vue.tickArr[index].docName};
+                         Par.postImgArr.push(str);	
                      }
                  }
             });	 */
@@ -316,10 +327,10 @@ const Util = {
 
         })
     },
-    getRequestByAjax(url,parm,type,callBack){
+    getRequestByAjax(url,Parm,type,callBack){
         $.ajax({
             url : url,
-            data : parm,
+            data : Parm,
             dataType : type,
             type : 'get',
             success : function(res){
@@ -337,23 +348,23 @@ const Util = {
     },
     getRequest : function(url,callBack)
     {
-        vueObj.http.get(`http://${par.baseUrl}${url}`).then((res)=>{
+        vueObj.http.get(`http://${Par.baseUrl}${url}`).then((res)=>{
             callBack(res);
         },(res)=>{
             callBack(res);
         });
 
     },
-    postRequest : function(url,parm,callBack){
-        vueObj.http.post(`http://${par.baseUrl}${url}`,parm,{emulateJSON: true}).then((res)=>{
+    postRequest : function(url,Parm,callBack){
+        vueObj.http.post(`http://${Par.baseUrl}${url}`,Parm,{emulateJSON: true}).then((res)=>{
             callBack(res);
         },(res)=>{
             callBack(res);
         });
 
     },
-    deleteRequest : function(url,parm,callBack){
-        vueObj.http.delete(`http://${par.baseUrl}${url}`,parm).then((res)=>{
+    deleteRequest : function(url,Parm,callBack){
+        vueObj.http.delete(`http://${Par.baseUrl}${url}`,Parm).then((res)=>{
             callBack(res);
         },(res)=>{
             callBack(res);
@@ -364,7 +375,7 @@ const Util = {
         return str==null||str=='null'?'':str;
     },
     drawPicture(vueO,obj,fileSize){
-        par.uploadImgCount++;
+        Par.uploadImgCount++;
         let src = window.URL.createObjectURL(obj);
         let dataURL = null;
         let img = new Image();
@@ -382,7 +393,7 @@ const Util = {
             let fielId = Util.getFielId();
             let fileName = Util.getFileName();
 
-            let index = Util.addTypeNum(par.nodeId);
+            let index = Util.addTypeNum(Par.nodeId);
             var base64 = dataURL.replace("data:image/jpeg;base64,", "");
             var objmsg = {
                 InterFace: "Transmission_WebToLocal",
@@ -390,19 +401,20 @@ const Util = {
                 FileName: fileName,
                 Base64: base64
             };
-            par.ws.send(JSON.stringify(objmsg));
 
-            par.curImgIndex++;
-            let imgId = par.nodeId+''+par.imgData[index].typeNum;
-            let child = {'id': imgId,'name':fileName,'imageSrc':dataURL,'fielId':fielId,'imgName':fileName,'isUpload':false,'curImgIndex':par.curImgIndex,'imgTip':'','cutImgCls':'','show':false,'fileSize':fileSize};
+            Util.sendInfo(JSON.stringify(objmsg));
+            Par.curImgIndex++;
+            let imgId = Par.nodeId+''+Par.imgData[index].typeNum;
+            let child = {'id': imgId,'name':fileName,'imageSrc':dataURL,'fielId':fielId,'imgName':fileName,'isUpload':false,'curImgIndex':Par.curImgIndex,'imgTip':'','cutImgCls':'','show':false,'fileSize':fileSize};
             
-            par.uploadImageArr.push(child);//存放要上传的图片 上传使用
-            par.imgData[index].children.push(child); //树
+            Par.uploadImageArr.push(child);//存放要上传的图片 上传使用
+            Par.imgData[index].children.push(child); //树
 
-            par.imgViewArr.push({'pId':'p-'+index,"cId":'c-'+(par.imgData[index].children.length-1)});
-            //par.imgViewArr.push({'imageSrc':dataURL,'imgFielId':fielId,'isUpload':false});//存储图片 查看大图时使用
-            par.ticketNodes[0].children[index] = par.imgData[index];
+            Par.imgViewArr.push({'pId':'p-'+index,"cId":'c-'+(Par.imgData[index].children.length-1),'type':'i'});
+            Par.ticketNodes[0].children[index] = Par.imgData[index];
             vueO.$store.commit('changeImgCount','+');
+            vueO.$store.commit('changeUploadImgCount','+');
+            vueO.$store.state.initImportCount = vueO.$store.state.uploadImgCount;
 
             Util.reloadTree();
         }
@@ -412,7 +424,7 @@ const Util = {
     initTreeNode : function(){
 
         let bool = false;
-        let arr = par.ticketNodes[0].children;
+        let arr = Par.ticketNodes[0].children;
         /*禁止使用 find 函数 */
         for(let i=0;i<arr.length;i++){
             if(arr[i].name =='其它'){
@@ -421,33 +433,33 @@ const Util = {
             }
         }
         if(!bool){
-            var nodeId = 10+''+par.ticketNodes[0].children.length;
-            par.nodeId = nodeId;
-            par.nodeName = '其它';
+            var nodeId = 10+''+Par.ticketNodes[0].children.length;
+            Par.nodeId = nodeId;
+            Par.nodeName = '其它';
             var obj = {id:nodeId,name:'其它','typeNum':0,'typeName':'其它',"open":true,children:[]};
-            par.imgData.push(obj);
-            par.ticketNodes[0].children.push(obj);
+            Par.imgData.push(obj);
+            Par.ticketNodes[0].children.push(obj);
         }
         
-        $.fn.zTree.init($("#fileDemo"), par.setting, par.fileNodes);
-        $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+        $.fn.zTree.init($("#fileDemo"), Par.setting, Par.fileNodes);
+        $.fn.zTree.init($("#treeDemo"), Par.setting, Par.ticketNodes);
         
     },
     sortTreeAndImg: function(pId,fileId,index,flag){
        
-        for(let i=0;i<par.imgData.length;i++){
-            if(pId == par.imgData[i].id){
-                let arr= par.imgData[i].children;
+        for(let i=0;i<Par.imgData.length;i++){
+            if(pId == Par.imgData[i].id){
+                let arr= Par.imgData[i].children;
                 if(flag){
                     for(let k=index;k<arr.length;k++){
-                        par.imgData[i].children[k].id = pId+''+k;
+                        Par.imgData[i].children[k].id = pId+''+k;
                     }
                 }else if(!flag){
                     let str = null;
                     let s = null;
-                    window.console.log(122)
-                    /*不要用par.imgData[i].children.find 这个函数 */
-                    let childArr = par.imgData[i].children;
+                    
+                    /*不要用Par.imgData[i].children.find 这个函数 */
+                    let childArr = Par.imgData[i].children;
                     for(let w=0;w<childArr.length;w++){
                         if(childArr[w].fielId == fileId){
                             s = w;
@@ -457,22 +469,21 @@ const Util = {
                     }
 
                     if(s!=null){
-                        par.imgData[i].children.splice(s,1);
+                        Par.imgData[i].children.splice(s,1);
                     }
                     if(str!=null){
 
                         str.id = pId+''+(index+1);
-                        if(par.imgData[i].id == pId){
-                            par.imgData[i].typeNum+=1;
+                        if(Par.imgData[i].id == pId){
+                            Par.imgData[i].typeNum+=1;
                         }
-                        window.console.log(133)
-                        par.imgData[i].children.splice(index,0,str);
-                        let newArr = par.imgData[i].children;
+                        
+                        Par.imgData[i].children.splice(index,0,str);
+                        let newArr = Par.imgData[i].children;
                         
                         index = (index+1);
-                        window.console.log(155)
                         for(let f=index;f<newArr.length;f++){
-                            par.imgData[i].children[f].id = pId+''+(index+1);
+                            Par.imgData[i].children[f].id = pId+''+(index+1);
                         }
                     }
                     
@@ -482,34 +493,29 @@ const Util = {
             }
         }
 
-        /* /*刷新图片下标
-        let count =0;
-        for(let v=0;v<par.imgData.length;v++){
-            count+= par.imgData[v].children.length;
-        }
-        window.console.log(count);
-        let e = 1;
-        for(let b=0;b<par.imgData.length;b++){
-            for(let l=0;l<par.imgData[b].children.length;l++){
-                par.imgData[b].children[l].curImgIndex = e;
-                if(e < count){
-                    e+=1;
-                }
+        //刷新图片下标
+        let count = 0;
+        for(let v=0;v<Par.imgData.length;v++){
+            let carr = Par.imgData[v].children;
+            for(let s=0;s<carr.length;s++){
+                count++;
+                Par.imgData[v].children[s].curImgIndex = count;
             }
-        } */
 
-        par.ticketNodes[0].children = par.imgData;
-        $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+        }
+
+        Par.ticketNodes[0].children = Par.imgData;
+        $.fn.zTree.init($("#treeDemo"), Par.setting, Par.ticketNodes);
 
     },
     reloadTree : function(){
-        $.fn.zTree.init($("#fileDemo"), par.setting, par.fileNodes);
-        $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+        $.fn.zTree.init($("#fileDemo"), Par.setting, Par.fileNodes);
+        $.fn.zTree.init($("#treeDemo"), Par.setting, Par.ticketNodes);
     },
     /*添加树节点*/
     addTreeNode : function(id,name){
        
-        var nodeArr = par.ticketNodes[0].children;
+        var nodeArr = Par.ticketNodes[0].children;
         nodeArr.find((i)=>{
 
             if(i.name == name){
@@ -520,18 +526,18 @@ const Util = {
         });
 
         var str = {id:id,name:name,'typeNum':0,'typeName':name,"open":true,children:[]};
-        par.imgData.push(str);
-        par.nodeId = id;
-        par.nodeName = name;
-        par.ticketNodes[0].children = par.imgData;
+        Par.imgData.push(str);
+        Par.nodeId = id;
+        Par.nodeName = name;
+        Par.ticketNodes[0].children = Par.imgData;
     },
     addTypeNum : function(id){
         let index = 0;
-        par.imgData.find((i,r)=>{
+        Par.imgData.find((i,r)=>{
             if(i.id == id){
                 index = r;
                 i.typeNum++;
-                i.typeName = par.nodeName;
+                i.typeName = Par.nodeName;
             }
         })
         return index;
@@ -539,34 +545,36 @@ const Util = {
     uploadDataFromServer(arr,arr1){
         
         if(arr.length > 0 &&arr1.length > 0){
-            for(let s=0;s<arr.length;s++){
-                if(arr[s].name!='附件'){
-                    if(arr[s].name=='其它'){
-                        par.nodeId = arr[s].id;
+
+            arr.find((i)=>{
+                if(i.name!='附件'){
+                    window.console.log(i.name)
+                    if(i.name=='其它'){
+                        Par.nodeId = i.id;
                     }
-                
-                    let str = {'typeNum':arr[s].children.length,'typeName':arr[s].name,'children':[],'open':true,'id':arr[s].id,name:arr[s].name};
-                    par.imgData.push(str);
+                    let str = {'typeNum':i.children.length,'typeName':i.name,'children':[],'open':true,'id':i.id,name:i.name};
+                    Par.imgData.push(str);
                 }
-                
-            }
+
+            })
             
-            let imgData = par.imgData;
+            let imgData = Par.imgData;
             for(let k=0;k<imgData.length;k++){
                 for(let o=0;o<arr1.length;o++){
                     
-                    if(imgData[k].id == arr1[o].parentNodeId){
+                    if(imgData[k].id == arr1[o].ParentNodeId){
                         
-                        par.curImgIndex++;
-                        store.commit('changeImgCount','+');
-                        par.imgViewArr.push({'imageSrc':arr1[o].url,'imgFielId':arr1[o].fileId,'isUpload':true});//存储图片 查看大图时使用
-                        par.imgData[k].children.push({'imageSrc':arr1[o].url,'fielId':arr1[o].fileId,'imgName':arr1[o].fileName,name:arr1[o].fileName,'show':'true','curImgIndex':par.curImgIndex,'isUpload':true,'imgTip':'imgSucTip'});
+                        Par.curImgIndex++;
+                        Store.commit('changeImgCount','+');
+                        
+                        Par.imgData[k].children.push({'imageSrc':arr1[o].url,'fielId':arr1[o].fileId,'imgName':arr1[o].fileName,name:arr1[o].fileName,'show':'true','curImgIndex':Par.curImgIndex,'isUpload':true,'imgTip':'imgSucTip'});
+                        Par.imgViewArr.push({'pId':'p-'+k,"cId":'c-'+(Par.imgData[k].children.length-1)});//存储图片 查看大图时使用
                     }
                 }
             } 
             Util.filterData(arr1);
         }
-        par.ticketNodes[0].children = par.imgData;
+        Par.ticketNodes[0].children = Par.imgData;
         Util.reloadTree(); 
     },
     filterData(arr){
@@ -574,25 +582,25 @@ const Util = {
             arr.find((k)=>{
                 let fileIcon = Util.getFileTypeByName(k.fileName);
                 if(k.type=='555'||k.type=='666'||k.type=='777'||k.type=='888'||k.type=='999'){
-                    par.fileListData.push({'fileId':k.fileId,'fileName':k.fileName,'fileIcon':fileIcon,'id':k.fileId,'name':k.fileName});
+                    Par.fileListData.push({'fileId':k.fileId,'fileName':k.fileName,'fileIcon':fileIcon,'id':k.fileId,'name':k.fileName});
                 }else if(k.type=='102'){
-                    par.ticketListData.push({'fileId':k.fileId,'fileName':k.fileName,'fileSrc':'http://47.92.211.214:8080'+k.surl});
+                    Par.ticketListData.push({'fileId':k.fileId,'fileName':k.fileName,'fileSrc':'http://47.92.211.214:8080'+k.surl});
                 }
             });
-            par.fileNodes[0].children = par.fileListData;
+            Par.fileNodes[0].children = Par.fileListData;
         }
     },
     fileReName : function(id,name){
 
         let bool = false;
-        let nodeArr = par.imgData;
+        let nodeArr = Par.imgData;
         for(let q=0;q<nodeArr.length;q++){
             for(let y=0;y<nodeArr[q].children.length;y++){
                 if(nodeArr[q].children[y].fielId == id){
-                    par.imgData[q].children[y].name = name;
-                    par.imgData[q].children[y].imgName = name;
+                    Par.imgData[q].children[y].name = name;
+                    Par.imgData[q].children[y].imgName = name;
                     bool = true;
-                    $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+                    $.fn.zTree.init($("#treeDemo"), Par.setting, Par.ticketNodes);
                     break;
                 }
             }
@@ -603,9 +611,9 @@ const Util = {
 
     },
     /*移动大图 */
-    moveImage : function(parent,target){
+    moveImage : function(Parent,target){
 
-        let box = document.getElementById(parent)
+        let box = document.getElementById(Parent)
         let img = document.getElementById(target);
 
         img.onmousedown=function(ev) {
@@ -645,47 +653,51 @@ const Util = {
         var style = null;
         switch (num){
             case 0:
-                par.scaleBig = par.scaleSmall = 1;//默认值
-                par.rotatez = 0;
-                style = {"transition":"all 0s","transform":"rotateZ("+par.rotatez+"deg)  scale(1)"};
+                Par.scaleBig = Par.scaleSmall = 1;//默认值
+                Par.rotatez = 0;
+                style = {"transition":"all 0.4s","transform":"rotateZ("+Par.rotatez+"deg)  scale(1)"};
                 break;
             case 1:
-                if(par.scaleBig <= 1){
-                    par.scaleBig = (par.scaleSmall + 0.2);
+                if(Par.scaleBig <= 1){
+                    Par.scaleBig = (Par.scaleSmall + 0.2);
                 }else{
-                    par.scaleBig += 0.2;
+                    Par.scaleBig += 0.2;
                 }
-                par.imgScale = par.scaleBig;
-                par.scaleSmall = par.scaleBig;
-                rotatez = par.rotatez;
-                style = {"transition":"all 0s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(par.scaleBig)+")"};
+                Par.imgScale = Par.scaleBig;
+                Par.scaleSmall = Par.scaleBig;
+                rotatez = Par.rotatez;
+                style = {"transition":"all 0.4s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(Par.scaleBig)+")"};
                 break;
             case 2:
-                if(par.scaleSmall<=0.3){
+                if(Par.scaleSmall<=0.3){
                     return false;
                 }
-                if(par.scaleSmall >= 1){
-                    par.scaleSmall = (par.scaleBig - 0.2);
+                if(Par.scaleSmall >= 1){
+                    Par.scaleSmall = (Par.scaleBig - 0.2);
                 }else{
-                    par.scaleSmall -= 0.2;	
+                    Par.scaleSmall -= 0.2;	
                 }
-                par.imgScale = par.scaleSmall;
-                par.scaleBig = par.scaleSmall;
-                rotatez = par.rotatez;
-                style = {"transition":"all 0s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(par.scaleSmall)+")"};
+                Par.imgScale = Par.scaleSmall;
+                Par.scaleBig = Par.scaleSmall;
+                rotatez = Par.rotatez;
+                style = {"transition":"all 0.4s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(Par.scaleSmall)+")"};
                 break;
             case 3:
-                rotatez = par.rotatez -= 90;
-                scale = par.imgScale;
-                style = {"transition":"all 0s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
+                rotatez = Par.rotatez -= 90;
+                scale = Par.imgScale;
+                style = {"transition":"all 0.4s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
                 break;
             case 4:
-                rotatez = par.rotatez += 90;
-                scale = par.imgScale;
-                style = {"transition":"all 0s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
+                rotatez = Par.rotatez += 90;
+                scale = Par.imgScale;
+                style = {"transition":"all 0.4s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
                 break;
             case 'r':
-                style = {"transition":"all .2s","transform":"rotateZ("+par.rotatez+"deg) scale("+Math.abs(par.imgScale)+")"};
+                style = {"transition":"all .2s","transform":"rotateZ("+Par.rotatez+"deg) scale("+Math.abs(Par.imgScale)+")"};
+                break;
+            case 's':
+                Par.rotatez = 0, Par.imgScale = Par.scaleSmall = Par.scaleBig = 1;
+                style = {"transition":"all 0s","transform":"rotateZ("+Par.rotatez+"deg) scale("+Math.abs(Par.imgScale)+")"};
                 break;
         }
         return style;
@@ -695,6 +707,7 @@ const Util = {
         var flag = false;
         var img = document.getElementById(target);
         img.onmouseenter = function(){
+            
             flag = true;
             if(flag){
                 window.onwheel = function(e){
@@ -716,208 +729,36 @@ const Util = {
     getFileName(){
         var d = new Date();
         let m = (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-        return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+'-'+m+'.png';
+        return d.getFullYear()+''+(d.getMonth()+1)+''+d.getDate()+''+m+'.png';
     },
     uploadFiles(obj){
-        /* var len = obj.files.length;
-        if(len > 3 ){
-            Util.showModelTip('warning','一次性同时只能上传三张附件');
-            return false;
-        }
-        
-        let d = [];
-        let fileArr = [];
-        let fileCount = []
-        for(let s=0;s<len;s++){
-            window.console.log(obj.files[s])
-            var name = obj.files[s].name;
-            
-            name = name.substring(name.lastIndexOf('.'),name.length);
-            if(name!='.pdf'&&name!='.doc'&&name!='.docx'&&name!='.txt'&&name!='.xls'&&name!='.xlsx'&&name!='.ppt'&&name!='.pptx'){
-                
-                Util.showModelTip('warning','只支持 PDF WORD EXCEL PPT TXT 类型附件');
-                break;
-            }else{
-
-                let fileName = obj.files[s].name;
-                let fileSize = obj.files[s].size;
-
-                fileSize = parseInt(Math.ceil(fileSize/1024)).toFixed(2);
-                fileArr.push((fileSize/2));
-                fileCount.push((fileSize/4));
-                window.console.log(fileSize)
-                if(fileSize > 1024){
-                    fileSize = (fileSize /1024)+'MB';
-                }else{
-                    fileSize = (fileSize) + 'KB';
-                }
-                var fileIcon = '';
-                if(name=='.pdf'){
-                    fileIcon = '/static/pdfs.png';
-                }else if(name == '.doc'||name=='.docx'){
-                    fileIcon = '/static/words.png';
-                }else if(name == '.xls'||name=='.xlsx'){
-                    fileIcon = '/static/xlss.png';
-                }else if(name == '.ppt'||name=='.pptx'){
-                    fileIcon = '/static/pptxs.png';
-                }else if(name == '.txt'){
-                    fileIcon = '/static/txts.png';
-                }
-                var str = {'id':s,'name':fileName,'sFileIcon':fileIcon,'bFileIcon':'','fileName':fileName,'fileSize':fileSize,'progressBar':'0','fileState':'','fileUrl':''};
-                par.fileData.push(str);
-
-                /*var formData = new FormData();//这里需要实例化一个FormData来进行文件上传
-                var filesId = Util.getFielId();
-                formData.append("fileByte",obj.files[i]);
-                formData.append("batchId",par.batchId[0]);
-                formData.append("fileId",filesId);
-                formData.append("businessSerialNo",par.businessSerialNo); 
-
-                try{
-
-                    Util.postRequest('/imageUploadServices/uploadDocument',formData,(res)=>{
-                        window.console.log(res);
-                    });
-
-                }catch(e){
-                    window.console.log(e);
-                    par.uploadFileIsComplite = true;
-                    Util.showModelTip('warning','上传失败!');
-                }*/
-                
-                
-                /* var imgSrc = "";
-                var imgTip = "./img/suc.png";
-                postData('/imageUploadServices/uploadDocument',formData,(res)=>{
-                    
-                    if(res.status==200||res.status=="200"){
-                        var imgSrc = "";
-                        var imgTip = "../../img/util/suc.png";
-                        if(name=='.doc'||name=='.docx'){
-                            imgSrc = '../../img/util/doc.jpg';
-                        }else if(name=='.xlsx'||name=='.xls'){
-                            imgSrc = '../../img/util/xls.jpg';
-                        }else if(name=='.pptx'){
-                            imgSrc = '../../img/util/ppt.jpg';
-                        }else if(name=='.pdf'){
-                            imgSrc = '../../img/util/pdf.jpg';
-                        }
-                        var str = {showImgTip:true,imgTip:imgTip,imgSrc:imgSrc,id:filesId,imgFileId:filesId,fileName:fileName};
-                        vue.fileList.push(str);
-                    }else{
-                        swal("提示!",'附件上传失败!','warning');
-                        return false;
-                    }
-                }); 
-            }
-        }
-
-        for(let i=0;i<len;i++){
-            
-            window.console.log(i,fileCount[i]);   
-            d[i] = window.setInterval(function(){
-                
-                fileCount[i]+=(fileCount[i]/2);
-                window.console.log(i,fileCount[i]);   
-
-                if(fileCount[i]>=1000){
-                    fileCount[i] = Math.ceil(fileCount[i] / 100);
-                }
-
-                par.fileData[i].progressBar = Math.ceil(fileCount[i]).toFixed(0);
-                if(parseInt(par.fileData[i].progressBar)>=100){
-                    par.fileData[i].progressBar = 100;
-                }
-                if(fileCount[i] >= fileArr[i]){
-                    window.clearInterval(d[i]);
-                }
-
-            },(1000*(i+1)));  
-
-        }  
-
-        for (let k=0;k<par.fileData.length;k++){
-
-            var formData = new FormData();//这里需要实例化一个FormData来进行文件上传
-            var filesId = Util.getFielId();
-            formData.append("fileByte",obj.files[k]);
-            formData.append("batchId",par.batchId[0]);
-            formData.append("fileId",filesId);
-            formData.append("businessSerialNo",par.businessSerialNo); 
-
-            try{
-
-                Util.postRequest('http://47.92.211.214:8080/imageUploadServices/uploadDocument',formData,(res)=>{
-                    
-                    if(res.body.status==200){
-                        var id= res.body.data.purl;
-                        id = id.substring(id.lastIndexOf('/'),id.length);
-                        par.fileData[k].id = id;
-                        var icon = res.body.data.fileType;
-                        icon = icon.substring(0,icon.lastIndexOf('.'));
-                        window.console.log(icon);
-                        if(icon=='pdf'){
-                            icon = '/static/pdf.png';
-                        }else if(icon == 'doc'||icon=='docx'){
-                            icon = '/static/word.png';
-                        }else if(icon == 'xls'||icon=='xlsx'){
-                            icon = '/static/xls.png';
-                        }else if(icon == 'ppt'||icon=='pptx'){
-                            icon = '/static/pptx.png';
-                        }else if(icon == 'txt'){
-                            icon = '/static/txt.png';
-                        }
-                        
-                        par.fileData[k].progressBar = 100;
-                        par.fileData[k].bFileIcon = icon;
-                        par.fileData[k].fileState = '成功';
-                        par.fileData[k].fileUrl = res.body.data.purl;
-
-                        if((k+1) == par.fileData.length){
-                            par.uploadFileIsComplite = true;
-                        }
-                    }
-                    
-                    par.fileNodes[0].children = par.fileData;
-                    $.fn.zTree.init($("#fileDemo"), par.setting, par.fileNodes);
-                });
-
-            }catch(e){
-                window.console.log(e);
-                par.fileData[k].fileState = '失败';
-                par.uploadFileIsComplite = true;
-                Util.showModelTip('warning','上传失败!');
-                return false;
-            }
-
-        } */
-        window.console.log(obj);        
+          
         for (let k=0;k<obj.length;k++){
 
             var formData = new FormData();//这里需要实例化一个FormData来进行文件上传
             var filesId = Util.getFielId();
             formData.append("fileByte",obj[k].fileObj);
-            formData.append("batchId",par.batchId[0]);
+            formData.append("batchId",Par.batchId[0]);
             formData.append("fileId",filesId);
-            formData.append("businessSerialNo",par.businessSerialNo); 
+            formData.append("businessSerialNo",Par.businessSerialNo); 
 
             try{
 
                 Util.postRequest('/imageUploadServices/uploadDocument',formData,(res)=>{
-                    window.console.log(res);
-                    if(res.body.status==200||res.body.status==500){
+                    //window.console.log(res);
+                    if(res.body.status==200){
 
                         var id= res.body.data.purl;
                         id = id.substring(id.lastIndexOf('/'),id.length);
 
-                        par.uploadFileArr[k].state = 1;
+                        Par.uploadFileArr[k].state = 1;
                         let str = {'fileId':id,'fileName':obj[k].fileObj.fileName,'type':555,'id':id,'name':obj[k].fileObj.fileName};
-                        par.fileListData.push(str);
+                        Par.fileListData.push(str);
 
-                        par.fileNodes[0].children.push(str);
-                        $.fn.zTree.init($("#fileDemo"), par.setting, par.fileNodes); 
+                        Par.fileNodes[0].children.push(str);
+                        $.fn.zTree.init($("#fileDemo"), Par.setting, Par.fileNodes); 
                     }else{
-                        par.uploadFileArr[k].state = 2;
+                        Par.uploadFileArr[k].state = 2;
                         Util.showModelTip('warning','上传失败!');
                     }
                 });

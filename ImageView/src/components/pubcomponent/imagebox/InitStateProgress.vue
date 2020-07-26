@@ -34,7 +34,7 @@
                         <div>状态</div>
                     </li>
                     <li class="initContentLI initContentLIInfo" v-for="(c,i) in initFileData" :key="i">
-                        <div><i class="el-icon-document"></i> {{c.fileName}}</div>
+                        <div ><i class="el-icon-document"></i> {{c.fileName}}</div>
                         <div>{{c.fileSize}}</div>
                         <div v-if="c.state==0"><i class="el-icon-loading"></i></div>
                         <div v-else-if="c.state==1"><i class="el-icon-circle-check"></i></div>
@@ -112,6 +112,7 @@ export default {
             width: 100%;
             height: auto;
             background: white;
+            margin-bottom: 40px;
             box-shadow: 0px 2px 4px#c4c4c4;
         }
 
@@ -153,8 +154,8 @@ export default {
     transform: translateY(-93px);
 }
 
-.initContentLI > div:nth-child(2){
-    flex: 2;
+.initContentLI > div:nth-child(1){
+    flex: 2 !important;
 }
 
 </style>

@@ -5,91 +5,17 @@
         <div class="folderMainBox">
             <div class="folderTitle">
                 <span>影像池文件夹...</span>
-                <span  @click="$store.commit('showAppFolder')"><i class="el-icon-close"></i> </span>
+                <span  @click="clsoeFolder"><i class="el-icon-close"></i> </span>
             </div>
             <div class="folderContent">
                 <div class="fcontent">
                     <ul class="folderUl">
-                        <li @click="showAppPool">
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
+
+                        <li @click="showAppPool"  v-for="(item,i) in folderList" :key="i">
+                            <img class="folderImg" :id="item.id" src="../../../assets/img/folder.png">
+                            <span class="folderName">{{item.folderName}}</span>
                         </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
-                        <li>
-                            <img class="folderImg" src="../../../assets/img/folder.png">
-                            <span class="folderName">sdgdg</span>
-                        </li>
+                        
                     </ul>
                 </div>
             </div>
@@ -99,10 +25,32 @@
 
 </template>
 <script>
+import uitl from '../../../utils/util.js'
+import par from '../../../utils/param.js'
+
 export default {
+    data : function(){
+        return {
+            'folderList' : []
+        }
+    },
+    beforeMount(){
+
+        uitl.getRequest(`/appApi/getInvoiceFolder/${par.userNo}`,(res)=>{
+            if(res.body.status == 200){
+                this.folderList = res.body.data;
+            }
+        });
+
+    },
     methods : {
-        showAppPool(){
+        showAppPool(e){
+            
+            this.$store.state.appFolderId = e.target.id; 
             this.$emit('showAppPoolView');
+        },
+        clsoeFolder(){
+            this.$emit('showApplicationFolder')
         }
     }
 }
@@ -123,7 +71,6 @@ export default {
     justify-content: center;
     align-content: center;
     position: absolute;
-    background: rgba(221, 221, 221, 0.603);
 }
 
 .folderMainBox{
@@ -174,7 +121,7 @@ export default {
             position: relative;
             box-sizing: border-box;
             border-radius: 5px;
-            box-shadow: 0px 5px 18px rgb(211, 206, 206);
+            box-shadow: 0px 4px 10px rgb(221, 221, 221);
         }
 
         .folderImg{

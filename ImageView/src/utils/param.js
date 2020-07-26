@@ -36,11 +36,10 @@ let par = {
     curImgIndex : 0,//每张图片下标
     imgViewArr : [],//存储所有图片数组 查看大图时使用
     postImgArr : [],//提交树
-    serverIp : '47.92.211.214',
+    serverIp : '127.0.0.1',
     serverPort : '8080',
     socketPort : '28388',
     ocrPort : '0',
-    uploadImgCount : 0,//上传数量
     scanType : 1,//扫描类型 1单扫 2批扫
     pickImage : [],//选中图片
     uploadFileArr : [],//要上传的附件
@@ -56,10 +55,8 @@ let par = {
     SaveType : null,
     userId : null,
     businessSerialNo : null,//流水号
-
     uploadFileIsComplite : false,
     deviceOptions : [],//扫描设备
-    ws : new WebSocket("ws://127.0.0.1:11345/Laputa"),
     setting : {
         edit: {
             enable : false,

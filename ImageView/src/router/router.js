@@ -148,6 +148,16 @@ const MyRouter = new Router({
           component : ()=>import('../components/imagemanage/ScanImage.vue')
         },
         {
+          path : '/viewimage',
+          name : 'viewimage',
+          component : ()=>import('../components/imagemanage/ViewImage.vue')
+        },
+        {
+          path : '/downcontrol',
+          name : 'downcontrol',
+          component : ()=>import('../components/pubcomponent/controller/DownControl.vue')
+        },
+        {
           name : 'notfound',
           path : '/notfound',
           component : ()=> import('../components/pubcomponent/error/NotFoun.vue')

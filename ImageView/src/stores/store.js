@@ -20,7 +20,8 @@ const store = new Vuex.Store({
         'initFileId' : '',//导入图片得id
         'initImportCount' : 0,//每次导入的图片数量,
         'initImportComplete' : false,//导入完成
-        'showAppFolder' : false,
+        'showAppFolder' : true,
+        'appFolderId' : null,
         'showImageUpload' : false,
         'showFileUpload' : false,
         'showFileProgressBar' : false,
@@ -36,7 +37,7 @@ const store = new Vuex.Store({
         changeLanguage : function(state,lang){
             state.defaultLang = lang;
         },
-        changeImgCount : function(state,s){
+        changeImgCount : function(state,s,count){
             switch(s){
                 case '+':
                     state.imgTotalCount++;
@@ -44,19 +45,22 @@ const store = new Vuex.Store({
                 case '-':
                     state.imgTotalCount--;
                 break;
+                case '++':
+                    state.imgTotalCount+= count;
+                break;
+                case '--':
+                    state.imgTotalCount-= count;
+                break;    
             }
         },
         changeImgIndex : function(state,id){
             state.curImgIndex = parseInt(id);
         },
-        showAppFolder : function(state,flag){
-            state.showAppFolder =  flag;
-        },
         showImageUpload : function(state){
             state.showImageUpload == true? state.showImageUpload = false:state.showImageUpload = true;
             if(state.showImageUpload==false){
                 state.curUploadCount = 1;
-                par.uploadImgCount = state.uploadImgCount = state.uploadProgress = 0;
+                state.uploadImgCount = state.uploadProgress = 0;
             }
         },
         showImgByFileId : function(state,id){
@@ -78,9 +82,6 @@ const store = new Vuex.Store({
         showFileUpload : function(state){
             state.showFileUpload == true? state.showFileUpload = false:state.showFileUpload = true;
         },
-        showFileProgressBar : function(state){
-            state.showFileProgressBar == true? state.showFileProgressBar = false:state.showFileProgressBar = true;
-        },
         updateFileListData(state,arr){
             for(let o=0;o<state.fileListData.length;o++){
                 for(let k=0;k<arr.length;k++){
@@ -90,9 +91,23 @@ const store = new Vuex.Store({
                 }
             }
         },
-        changeUploadImgCount:function(state,count){
+        changeUploadImgCount:function(state,s,count){
+
+            switch(s){
+                case '+':
+                    state.uploadImgCount++;
+                break;
+                case '-':
+                    state.uploadImgCount--;
+                break;
+                case '++':
+                    state.uploadImgCount+= count;
+                break;
+                case '--':
+                    state.uploadImgCount-= count;
+                break;
+            }
             
-            state.uploadImgCount = count;
         },
         changeUploadProgress (state,gress){
             state.uploadProgress = gress;

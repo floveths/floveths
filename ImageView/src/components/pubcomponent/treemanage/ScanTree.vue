@@ -17,9 +17,9 @@
                     <p>附件列表</p>
                 </div>
             </div>
-            <i class="slideBar" v-show="showfilelistBar" v-bind:style="slideBox"></i>
+            <i class="slideBar" v-show="showfilelistBar" :style="slideBox"></i>
         </div>
-        <div class="contentBox" v-bind:style="slideContentBox">
+        <div class="contentBox" :style="slideContentBox">
             <div class="treeUlBox">
                 <ul class="ztree" id="treeDemo" style="margin:15px"></ul>
             </div>
@@ -49,7 +49,7 @@ export default {
     },
     watch : {
         showfilelistBar : function(){
-            window.console.log(this.showfilelistBar)
+            
             if(this.showfilelistBar){
                 let name = par.ticketNodes[0].children[par.ticketNodes[0].children.length-1].name;
                 if(name.lastIndexOf('附件')!=-1){
@@ -81,6 +81,10 @@ export default {
 }
 </script>
 <style lang="less">
+.scanTreeBox{
+    background: #f9f9f9;
+}
+
 .asideLeftContent .content{
     overflow: hidden;
     color : #555552;
@@ -131,7 +135,7 @@ export default {
             overflow-y: auto;
         }
     }
-  }
+}
 
 .addTreeNodeBtn{
     background:#67c23a;

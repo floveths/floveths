@@ -72,10 +72,10 @@ export default {
 }
 
 .uploadBarBox{
-	width: 850px;
-	height: 420px;
-	margin: 100px auto;
-	padding: 80px;
+	width: 780px;
+	height: 350px;
+	margin: 160px auto 0px;
+	padding: 80px 30px 0px 80px;
 	box-sizing: border-box;
 	position: relative;
 	border: 1px solid #f2f2f2;
