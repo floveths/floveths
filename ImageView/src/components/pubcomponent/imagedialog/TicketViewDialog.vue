@@ -39,6 +39,8 @@
                 </div>
             </div>
 
+            <smallimagelist :viewList="imageViewList" :viewCount="totalCount" :imgOffset="imgSlideOffset" :boxOffset="slideBoxOffset" :slideImgLeft="slideImgLeft" :slideImgRight="slideImgRight"></smallimagelist>
+
         </div>
     </div>
 </template>
@@ -47,21 +49,31 @@
 /* import par from '../../../utils/param.js' */
 import util from '../../../utils/util'
 import ocrTemplate from '../ocrtemp/OcrListTemplate'
+import smallImageList from '../imagebox/SmallImageList'
 
 export default {
-    props :['imgUrl','ocrInfoList'],
+    props :['imageViewList'],
     data : function(){
         return {
+            'imgUrl' : '',
+            'curImgIndex' : 0,
+            'totalCount': 0,
+            'ocrInfoList' : '',
             'bigImgStyle' : {},
-            'totalCount': 0
-            
+            'slideBoxOffset' : 0,
+            'imgSlideOffset' : 0
         };
     },
     components : {
-        'ocrtemplate' : ocrTemplate
+        'ocrtemplate' : ocrTemplate,
+        'smallimagelist' : smallImageList
     },
     watch : {
-        
+       imageViewList : function(){
+           if(this.imageViewList.length > 0){
+               this.imgUrl = this.imageViewList[0].url
+           }
+       }
     },
     mounted : function(){
 
@@ -77,13 +89,43 @@ export default {
            var style = util.bigImage(id);
            this.bigImgStyle = style;
         },
-        slideImgLeft : function(){
-            util.bigImage('s');
-            this.$emit('slideImgLeft');
+        slideImgLeft(){
+            this.curImgIndex--;
+            if(this.curImgIndex < 0){
+                util.showModelTip('warning','已经是第一张了!');
+				this.curImgIndex = 0;
+				return false;
+            }
+
+            if(this.slideBoxOffset > 0){
+				this.slideBoxOffset -= 150;
+			}else{
+				this.imgSlideOffset -= 150;
+            }
+
+            this.getOcrInfo();
+            this.offsetIndex = this.curImgIndex;
+            this.bigImgUrl = this.imageViewList[this.curImgIndex].url;
+            
         },
-        slideImgRight : function(){
-            util.bigImage('s');
-            this.$emit('slideImgRight');
+        slideImgRight(){
+            this.curImgIndex++;
+			if(this.curImgIndex >= this.totalCount){
+                util.showModelTip('warning','已经是最后一张了!');
+				this.curImgIndex = (this.totalCount - 1);
+				return false;
+            }
+
+            if(this.slideBoxOffset < 1050){
+				this.slideBoxOffset += 150;
+			}else{
+				this.imgSlideOffset += 150;
+            }
+            
+            this.getOcrInfo();
+            this.offsetIndex = this.curImgIndex;
+            this.bigImgUrl = this.imageViewList[this.curImgIndex].url;
+
         },
         getOcrInfo(id){
             
@@ -114,14 +156,13 @@ export default {
 }
 
 .imgViewBox{
-    top: 0;
-    left: 0;
-    z-index: 999;
     width: 100vw;
     height: 100vh;
     position: fixed;
-    //background: rgb(238, 238, 238);
-    background: rgba(234, 234, 234, 0.9);
+    background: rgba(243, 243, 243, 0.616);
+    top: 0;
+    left: 0;
+    z-index: 999;
 
     .closeBar{
         width: 40px;
@@ -136,16 +177,17 @@ export default {
 
     .imgContentBox{
 
+        height: calc(100vh - 30vh);;
         display: flex;
         justify-content: space-between;
 
         .imgContentBoxLeft{
-            height: 90vh;
+            height: calc(100vh - 30vh);;
             width: 100%;
             flex: 4;
             display: flex;
             font-size: 40pt;
-            line-height: 80vh;
+            line-height: calc(100vh - 30vh);
             font-weight: 800;
             justify-content: space-between;
             .imgContentLeft,.imgContentRight{
@@ -180,9 +222,9 @@ export default {
 
         .imgContentBoxRight{
             flex: 1;
-            height: 90vh;
             overflow-y: auto;
             padding-top: 40px;
+            height: calc(100vh - 30vh);
         }
 
     }

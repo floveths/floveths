@@ -24,11 +24,11 @@
             <div class="fileTicketListContent" v-bind:style="slideContentBox">
 
 				<div class="fileListContent">
-                    <filelistview ></filelistview>
+                    <filelistview @viewPdfDoc="viewPdfDoc" ></filelistview>
                 </div>
 
                 <div class="ticketListBoxContent">
-                    <ticketlistview></ticketlistview>
+                    <ticketlistview @viewPdfDoc="viewPdfDoc" ></ticketlistview>
                 </div>
 
             </div>
@@ -36,7 +36,7 @@
         </div>
 
          <transition name="up">
-            <pdfdocview v-show="showPdfBox" :pdfurl="pdfUrl" @closepdfbox='showPdfBox=false'></pdfdocview>
+            <pdfdocview v-show="showPdfBox" :pdfurl="pdfUrl"  @closepdfbox='showPdfBox=false'></pdfdocview>
         </transition>
 
     </div>
@@ -97,8 +97,7 @@ export default {
         },
         viewPdfDoc : function(id){
             
-            let val = 'http://'+par.baseUrl+'/webShowImage/getDocument/'.concat(id);
-            this.pdfUrl = val;
+            this.pdfUrl = 'http://'+par.baseUrl+'/webShowImage/getDocument/'.concat(id);
             this.showPdfBox = true;
         },
         sliceBox:function(par){
@@ -166,6 +165,7 @@ export default {
             margin: 4px 0px;
             text-align: center;
             cursor: pointer;
+            white-space: nowrap;
         }
         > span{
             color: #e3e3e3;
@@ -274,72 +274,5 @@ export default {
 
 }
 
-.fileContentBox:hover > .fileListName{
-    transition: all .4s linear;
-    transform: translateY(-90px);
-}
-
-.ticketListUl li:last-child{
-    border-bottom: 0px !important;   
-}
-
-.ticketListUl li:hover{
-    box-shadow: 0px 2px 8px rgb(206, 202, 202);
-}
-
-.imgListFileCheck + .imgListFileLabel {
-    top: 0;
-    right: 0;
-    z-index: 110;
-    height: 20px;
-    padding: 0px 10px;
-    border-radius: 5px;
-    display: inline-block;
-    position: absolute;
-    cursor: pointer;
-    margin: 5px 5px !important;
-    border: 1px solid #e3e3e3;
-}
-
-.imgListFileCheck{
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    width: 100%;
-    display: none;
-    position: absolute;
-}
-
-.imgListFileCheck:checked + .imgListFileLabel::after {
-    content: "";
-    display: block;
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    border-radius: 5px;
-    background-size: contain;
-    background-image: url("../../../assets/img/box-y.png");
-    background-repeat: no-repeat;
-}
-
-.sucTip{
-	width: 110px;
-	height: 50px;
-	background: rgb(59, 245, 75);
-	z-index: 10;
-	transform: skewY(-45deg);
-}
-.sucTip::after{
-	content: '上传成功';
-	margin-left: 20px;
-	font-size: 10pt;
-	margin-top: 11px;
-	position: absolute;
-	transform: skew(28deg);
-}
 
 </style>

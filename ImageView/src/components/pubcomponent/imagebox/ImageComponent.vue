@@ -4,7 +4,7 @@
 			<div class="content">
 				<div class="row">
 					<div class="col-md-12">
-						<div class="panel panel-default" v-for="(pdata,index) in data" style="margin-top: 20px;"  v-show="pdata.typeNum > 0"  v-bind:key="index">
+						<div class="panel panel-default" v-for="(pdata,index) in data" style="margin: 20px 0px;"  v-show="pdata.typeNum > 0"  v-bind:key="index">
 							<div class="panel-heading text-center">
 								<span>{{pdata.typeName}} 共 {{pdata.typeNum}} 张影像</span>
 							</div>
@@ -38,13 +38,16 @@
 							<div class="panel-heading text-center">
 								<span> 共 {{attchListData.length}} 个附件</span>
 							</div>
-							<div class="row">
-								<div class=" col-md-3 col-sm-3 col-xs-6 " v-for="(data,index) in attchListData" v-bind:key="index">
-									<div class="img-thumbnails" >
-										<img v-bind:src="data.fileIcon" @dblclick="viewPdfDoc" v-bind:name="data.fileId"  >	
-										<input type="text" :value="data.fileName" class="reImgName" readonly="readonly" v-bind:name="data.fielId" v-on:blur="fileReName"/>
+
+							<div class="panel-body" >
+								<vuedragable v-model="attchListData" group="people" v-bind="dragOptions" @start="dragFiles" class="row">
+									<div class=" col-md-2 col-sm-3 col-xs-6 dragItem" v-for="(data,index) in attchListData"  :key="index">
+										<div class="img-thumbnails" style="height:120px !important" :itemid="data.fileId">
+											<img v-bind:src="data.fileIcon" @dblclick="viewPdfDoc" v-bind:name="data.fileId"  >	
+											<input type="text" :value="data.fileName" class="reImgName" readonly="readonly" />
+										</div>
 									</div>
-								</div>
+								</vuedragable>
 							</div>
 						</div>
 
@@ -87,6 +90,7 @@ export default {
 			'tipX' : 0,
 			'tipY' : 0,
 			'picked' : [],
+			'dragType' : '',
 			'dragDelete' : [],
 			'isDrag': false,
 			'pdfUrl' : null,
@@ -187,7 +191,7 @@ export default {
 		},
 		showCutImg(e){
 			
-			let msg = {'url':e.target.nextSibling.src,'fileId':e.target.nextSibling.name,'barType':3};
+			let msg = {'url':e.target.nextSibling.src,'fileId':e.target.nextSibling.name,'barType':2};
 			this.$emit('showBigImg',msg);
 		},
 		hasChecked(){
@@ -205,8 +209,15 @@ export default {
 			}
 			par.pickImage = this.picked;
 		},
+		dragFiles(e){
+			let id =e.item.childNodes[0].attributes.itemid.value;
+			//window.console.log(id);
+			this.dragType = 'f';
+			this.dragDelete.push(id);
+		},
 		dragStart(e,index) {
 			this.isDrag = true;
+			this.dragType = 'i';
 			var value = e.originalEvent.target.attributes.itemid.value
 			this.dragDelete.push({'nodeIndex':index,'imgValue':value});
 
@@ -244,37 +255,46 @@ export default {
 		dragToDelete(){
 
 			if(this.dragDelete.length>0){
-				var index = this.dragDelete[0].nodeIndex;
-				var imgIdex = this.dragDelete[0].imgValue.split('`')[0];
-				var imgFileId = this.dragDelete[0].imgValue.split('`')[1];
 
-				par.imgData[index].typeNum -= 1; 
-				var bool = par.imgData[index].children[imgIdex].isUpload;
-				par.imgData[index].children.splice(imgIdex,1);
-				let pId = index, cId = imgIdex;
-				
-				let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.dragDelete};
-				util.deleteRequest("/imageUploadServices",{body:parm},(res)=>{
-					if(res.body.status == 200){
-						let uploadArr = par.uploadImageArr.filter((i)=>{
-							return i.fielId != imgFileId ;
-						});
+				if(this.dragType=='f'){
+					let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.dragDelete[0]};
+					util.deleteRequest('/imageUploadServices',parm,(res)=>{
+						window.console.log(res);
+					})
+				}else{
+					var index = this.dragDelete[0].nodeIndex;
+					var imgIdex = this.dragDelete[0].imgValue.split('`')[0];
+					var imgFileId = this.dragDelete[0].imgValue.split('`')[1];
 
-						let viewArr = par.imgViewArr.filter((e)=>{
-							return e.pId != pId && e.cId != cId;
-						});
-						
-						par.imgViewArr = viewArr;
-						par.uploadImageArr = uploadArr;
-						this.$store.commit('changeImgCount','-');
-					}else{
-						util.showModelTip('warning','删除失败!');
-						return false;
+					par.imgData[index].typeNum -= 1; 
+					var bool = par.imgData[index].children[imgIdex].isUpload;
+					par.imgData[index].children.splice(imgIdex,1);
+					let pId = index, cId = imgIdex;
+					
+					let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.dragDelete};
+					util.deleteRequest("/imageUploadServices",{body:parm},(res)=>{
+						if(res.body.status == 200){
+							let uploadArr = par.uploadImageArr.filter((i)=>{
+								return i.fielId != imgFileId ;
+							});
+
+							let viewArr = par.imgViewArr.filter((e)=>{
+								return e.pId != pId && e.cId != cId;
+							});
+							
+							par.imgViewArr = viewArr;
+							par.uploadImageArr = uploadArr;
+							this.$store.commit('changeImgCount','-');
+						}else{
+							util.showModelTip('warning','删除失败!');
+							return false;
+						}
+					})
+					if(bool==false){
+						this.$store.commit('changeUploadImgCount','-');
 					}
-				})
-				if(bool==false){
-					this.$store.commit('changeUploadImgCount','-');
 				}
+				
 				this.dragDelete = [];//立即清空;
 			}
 			Util.reloadTree();

@@ -56,6 +56,21 @@ const MyRouter = new Router({
               component : ()=> import('../components/imagemanage/QueryTicket.vue')
             },
             {
+              name : 'advancedquery',
+              path : '/advancedquery',
+              component : ()=> import('../components/imagemanage/AdvancedQuery.vue')
+            },
+            {
+              name : 'electroncinvoice',
+              path : '/electroncinvoice',
+              component : ()=> import('../components/imagemanage/ElectroncInvoice.vue')
+            },
+            {
+              name : 'displayboard',
+              path : '/displayboard',
+              component : ()=> import('../components/imagemanage/DisplayBoard.vue')
+            },
+            {
               path : '/documentfiling',
               name : 'documentfiling',
               component : ()=> import('../components/imagemanage/DocumentFiling.vue')

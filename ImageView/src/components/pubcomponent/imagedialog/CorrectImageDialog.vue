@@ -1,7 +1,7 @@
 <template >
     <div >
 
-        <div class="imgViewBox">
+        <div class="correctImgViewBox">
             <div class="closeBar"  @click="closeModel">
                 <i class=" el-icon-plus" ></i>
             </div>
@@ -9,41 +9,30 @@
             <div class="imgContentBox">
                 <div class="imgContentBoxLeft">
 
-                    <div class="imgContentLeft" v-show="barType==1">
-                        <i class="el-icon-arrow-left" @click="slideImgLeft"></i>
-                    </div>
                     <div class="imgContentCenter">
                         <div class="contentImgBox" id="contentImgBox">
-                            <img :src="imgUrl" v-bind:style="bigImgStyle" id="ImageBox"> 
+                            <img :src="imgSrc" v-bind:style="bigImgStyle" id="ImageBox"> 
                         </div>
                     </div>
-                    <div class="imgContentRight" v-show="barType==1">
-                        <i class="el-icon-arrow-right" @click="slideImgRight"></i>
-                    </div>
 
                 </div>
 
-                <div class="imgContentBoxRight" v-show="showOcrList" >
-                    <ocrtemplate :type="1" :items="ocrInfoList" ></ocrtemplate>
-                </div>
             </div>
 
             <div class="bottomBar">
-                <div class="barBox" v-if="barType==1">
-                    <i class="el-icon-refresh-left" v-on:click="bigImage(3)"></i>
+
+                <div class="rotateBar" >
                     <i class="el-icon-plus" v-on:click="bigImage(1)"></i>
-                    <i v-on:click="bigImage(0)"><span>1:1</span></i>
-                    <i class="el-icon-minus" v-on:click="bigImage(2)"></i>
-                    <i class="el-icon-refresh-right" v-on:click="bigImage(4)"></i>
-                </div>
-
-                <div class="cutSamllImg" v-if="barType==2">
-
-                    <div v-for="(item,i) in cutImgList" :key="i">
-                        <img :src="item.imgUrl" :id="item.fileId" @mouseover="getCurImgOcrInfo" />
+                    <span >0°</span>
+                    <div class="rotateBarContent">
+                        <p class="rotateText" id="rotateText" >0°</p>
+                        <div class="rotateProgress" id="rotateProgress"></div>
+                        <div class="rotateCircle" id="rotateCircle" ></div>
                     </div>
-
+                    <span>360°</span>
+                    <i class="el-icon-minus" v-on:click="bigImage(2)"></i>
                 </div>
+                
             </div>
 
         </div>
@@ -53,59 +42,22 @@
 <script>
 import par from '../../../utils/param.js'
 import util from '../../../utils/util'
-import ocrTemplate from '../ocrtemp/OcrListTemplate'
 
 export default {
-    props :['imgSrc','barType','ticketId','appPoolData'],
+    props :['imgSrc'],
     data : function(){
         return {
-            'bigImgStyle' : {},
-            'imgUrl' : '',
-            'totalCount': 0,
-            'cutImgList' : [],
-            'ocrInfoList' : [],
-            'showOcrList' : false,
-            'fromAppPool' : false
-            
+            'bigImgStyle' : {}
         };
-    },
-    components : {
-        'ocrtemplate' : ocrTemplate
-    },
-    watch : {
-        imgSrc  (){
-            this.imgUrl = this.imgSrc;
-        },
-        appPoolData (){
-            
-            if(this.appPoolData.length > 0){
-                this.fromAppPool = true;
-                this.totalCount = this.appPoolData.length;
-            }else{
-                this.totalCount = this.$store.state.imgTotalCount;
-            }
-        },
-        ticketId : function(){
-            if(this.ticketId!=''||this.ticketId!=null&&this.barType==1||this.barType==3){
-
-                let id = this.ticketId;
-                this.getOcrInfo(id);
-                if(this.barType == 3){
-                    //cutImgList
-                    util.getRequest(`/imageServices/getImageCats?fileId=${this.ticketId}`,(res)=>{
-                        window.console.log(res);
-                        if(res.body.status==200){
-                            this.cutImgList = res.body.data.imgList;
-                        }
-                    });
-                }
-            }
-        }
     },
     mounted : function(){
 
         util.moveImage('contentImgBox','ImageBox');
         this.bigImgStyle = util.scrollImage('ImageBox');
+
+        window.setTimeout(()=>{
+            this.slideBarToTransfer();
+        },500)
         
     },
     methods : {
@@ -116,82 +68,47 @@ export default {
            var style = util.bigImage(id);
            this.bigImgStyle = style;
         },
-        slideImgLeft : function(){
-
-            let curIndex = this.$store.state.curImgIndex;
-            if((curIndex-1) < 0){
-                util.showModelTip('warning','已经是第一张图片了');
-                return false;
-            }else{
-                curIndex--;
-                this.loadImage(curIndex);
-            }
-        },
-        slideImgRight : function(){
-            let curIndex = this.$store.state.curImgIndex;
+        slideBarToTransfer(){
             
-            if((curIndex+1) >= this.totalCount){
-                util.showModelTip('warning','已经是最后一张图片了');
-                return false;
-            }else{
-                curIndex++;
-                this.loadImage(curIndex);
-            }
-        },
-        getOcrInfo(id){
-            
-            util.getRequest(`/webShowImage/invoiceInfo/${id}`,(res)=>{
+            let pageX = 0;
+            let Left = 0;
+            let _this = this;
 
-                if(res.body.status == "200"||res.body.status == 200){
-                    if(res.body.data.length>0 &&res.body.data!=null){
-                        this.showOcrList = true;
-                        this.ocrInfoList = res.body.data;
-                    }else{
-                        this.showOcrList = false;
+            var circle = document.getElementById('rotateCircle');
+            var rotateText = document.getElementById("rotateText");
+            var rotateProgress = document.getElementById("rotateProgress");
+
+            circle.onmousedown = function(e){
+
+                Left = circle.style.marginLeft;
+                if(Left==''||Left==null){
+                    Left = 0;
+                }else{
+                    Left = parseInt(Left);
+                }
+                window.onmousemove = function(es){
+                    
+                    pageX = (es.pageX - e.pageX) + Left;
+                    if(pageX <= 0){
+                        pageX = 0;
+                    }else if(pageX >= 220){
+                        pageX = 220;
                     }
                     
-                }
-            });
-        },
-        loadImage(curIndex){
-            if(this.fromAppPool){
-                
-                this.imgUrl = this.appPoolData[curIndex].url;
-            }else{
-                
-                let pId = par.imgViewArr[curIndex].pId;
-                let cId = par.imgViewArr[curIndex].cId;
+                    circle.style.marginLeft = pageX +'px';
+                    rotateProgress.style.width = pageX + 'px';
+                    par.rotatez = Math.floor(pageX * 1.64);
+                    rotateText.innerText =  par.rotatez + '°';
+                    _this.bigImage('r');
 
-                pId = pId.split('-');
-                cId = cId.split('-');
-                let type = par.imgViewArr[curIndex].type;
-                if(type == 'i'){
-                    this.imgUrl = par.imgData[pId[1]].children[cId[1]].imageSrc;
-                }else if(type == 's'){
-                    let fileId = par.imgData[pId[1]].children[cId[1]].fielId;
-                    var msg = {
-                        "InterFace" : "GetFullImage",
-                        "FileId" : fileId 
-                    };
-                    util.sendInfo(JSON.stringify(msg));
-                    window.setTimeout(() => {
-                        util.showBigImgFromActive(null,(res)=>{
-                            this.imgUrl = res;
-                        });
-                    }, 1500);
                 }
-                
-                this.getOcrInfo(par.imgData[pId[1]].children[cId[1]].fielId);
             }
-
-            this.$store.commit('changeImgIndex',curIndex);
-            let ImageBox = document.getElementById('ImageBox');
-            ImageBox.style.marginTop = 'auto';
-            ImageBox.style.marginLeft = 'auto';
-        },
-        getCurImgOcrInfo(e){
-            let id = e.target.id;
-            this.getOcrInfo(id);
+            
+            window.onmouseup = function(){
+                window.onmousemove = null;
+                return false;
+            }
+            
         }
     }
  
@@ -205,7 +122,7 @@ export default {
     padding: 0px;
 }
 
-.imgViewBox{
+.correctImgViewBox{
     width: 100vw;
     height: 100vh;
     position: fixed;

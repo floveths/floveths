@@ -64,15 +64,15 @@
           </ul>
         </div>
         <div class="contentBoxClander">
-          <div class="dataTitle">
+          <div class="dataTitle" @click="prevMonth">
             <div class="prev">
-              <span> 上个月</span>
+              <span> &lt;</span>
             </div>
             <div class="yearMonth">
               <p><span id="year"></span> · <span id="month"></span>月</p>
             </div>
-            <div class="next">
-              <span>下个月  </span>
+            <div class="next" @click="nextMonth">
+              <span>&gt;</span>
             </div>
           </div>
           <div class="clanderBox">
@@ -116,6 +116,9 @@ export default({
       temp : null,
       fengxiang : null,
       dataList : null,
+      curYear : 0,
+      curMonth : 0,
+      curDay : 0,
       url : 'http://wthrcdn.etouch.cn/weather_mini?city=%E5%8C%97%E4%BA%AC'
     };
   },
@@ -127,7 +130,10 @@ export default({
   mounted() {
 
     var date = new Date();
-    this.getClander(date.getFullYear(),(date.getMonth()+1),date.getDate());
+    this.curYear = date.getFullYear();
+    this.curMonth = (date.getMonth()+1);
+    this.curDay = date.getDate();
+    this.getClander(this.curYear,this.curMonth,this.curDay);
 
     util.getWeatherInfo(this.url,(res)=>{
 
@@ -143,7 +149,7 @@ export default({
   },
   methods: {
       getClander : function(year,month,day){
-				
+
 				var li = '';
 				var count = 0;
 				document.getElementById('year').innerHTML = year;
@@ -179,7 +185,24 @@ export default({
 				}
 				dataUl.innerHTML = li;
 				
-			}
+      },
+      prevMonth(){
+        this.curMonth = (this.curMonth-1);
+        if(this.curMonth < 1){
+          this.curYear-=1;
+          this.curMonth = 12;
+        }
+        this.getClander(this.curYear,this.curMonth,this.curDay);
+      },
+      nextMonth(){
+        
+        this.curMonth = (this.curMonth+1);
+        if(this.curMonth > 12){
+          this.curYear+=1;
+          this.curMonth = 1;
+        }
+        this.getClander(this.curYear,this.curMonth,this.curDay);
+      }
 			
   }
 
@@ -249,8 +272,9 @@ export default({
 
           ul li{
             cursor: pointer;
-            margin: 10px 15px !important;
+            widows: 135px;
             list-style: none;
+            margin: 10px 15px !important;
           }
         }
         
@@ -316,6 +340,7 @@ export default({
 				border-radius: 2px;
 				box-sizing: border-box;
         box-shadow: 0px 5px 10px #E5E5E5;
+        
 			}
 			.dataTitle{
 				display: flex;
@@ -327,9 +352,8 @@ export default({
 				align-content: center;
 				vertical-align: middle;
         align-items: center;
-        border-radius: 5px;
 				justify-content: space-between;
-				box-shadow: 0px 5px 15px #DCE4EA;
+        box-shadow: 0px 5px 15px #DCE4EA;
 			}
 			.yearMonth{
         flex: 2;
@@ -339,7 +363,9 @@ export default({
 			}
 			.prev,.next{
 				flex: 1.5;
-				font-size: 9pt;
+        font-size: 20pt;
+        cursor: pointer;
+        color: rgb(56, 56, 56);
 			}
 			.dataBar{
 				width: 100%;
@@ -350,7 +376,7 @@ export default({
 				display: grid;
 				padding: 2.5px 0px;
 				list-style: none;
-				background: linear-gradient(180deg,#eee,#ddd,#eee);
+				background: #72c4ec;
 				grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
 			}
 			.barUl > li{
@@ -363,7 +389,7 @@ export default({
 				height: 100%;
 				padding: 5px 5px;
 				box-sizing: border-box;
-				background: linear-gradient(120deg, #ffd840, #93ff4a);
+			//	background: rgb(255, 166, 181);
 			}
 			.dataContent > .dataUl{
 				list-style: none;
@@ -377,25 +403,28 @@ export default({
 				box-sizing: border-box;
 				justify-content: center;
 				text-align: center;
-				align-self: center;
+        align-self: center;
+        /* display: none; */
+        background: white;
         grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
         li{
           margin: 1.5px;
           cursor: pointer;
           border-radius: 3px;
-          border: 1px solid #ebebeb;
+          /* border: 1px solid #ebebeb; */
         }
 			}
 			
 			.dataTitle,.dataBar{
-				background: #FBFBFB;
+				background: #81D4FF;
 			}
 			.lastMonth,.nextMonth{
 				color: #C5C5C5;
 			}
 			.monthBox{
 				width: 100%;
-				height: 100%;
+        height: auto;
+        margin-top: 90px;
 				color: #666363;
 				position: absolute;
 				background: #fffffff0;
@@ -409,8 +438,8 @@ export default({
 			.monthBox ul li{
 				display: block;
 				text-align: center;
-				line-height: 72px;
-				margin: 2.5px;
+				line-height: 75px;
+				margin: 4px;
 				background: #FBFBFB;
 				box-shadow: 0px 2px 10px #e1dede;
 			}

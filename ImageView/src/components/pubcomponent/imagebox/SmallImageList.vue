@@ -74,7 +74,7 @@ export default {
     
     .smallSlideLeft,.smallSlideRight{
         top: 0;
-        z-index: 10000;
+        z-index: 999;
         width: 30px;
         height: 100%;
         font-size: 16pt;

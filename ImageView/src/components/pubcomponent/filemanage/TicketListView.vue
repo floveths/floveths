@@ -1,8 +1,8 @@
 <template>
     <div>
         <ul class="ticketListUl">
-            <li v-for="(item,i) in ticketListData" v-on:dblclick="viewPdfDoc" :value="item.fileId" :key="i">
-                <img :src="item.fileSrc" >
+            <li v-for="(item,i) in ticketListData" :key="i">
+                <img :src="item.fileSrc" v-on:dblclick="viewPdfDoc" :value="item.fileId" >
                 <p>{{item.fileName}}</p>
                 
             </li>
@@ -20,7 +20,7 @@ export default {
     },
     methods : {
         viewPdfDoc(e){
-            let id = e.target.parentElement.attributes.value.value;
+            let id = e.target.attributes.value.value;
             this.$emit('viewPdfDoc',id);
         }
     }

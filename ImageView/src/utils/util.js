@@ -655,7 +655,7 @@ const Util = {
             case 0:
                 Par.scaleBig = Par.scaleSmall = 1;//默认值
                 Par.rotatez = 0;
-                style = {"transition":"all 0.4s","transform":"rotateZ("+Par.rotatez+"deg)  scale(1)"};
+                style = {"transition":"all 0.2s","transform":"rotateZ("+Par.rotatez+"deg)  scale(1)"};
                 break;
             case 1:
                 if(Par.scaleBig <= 1){
@@ -666,7 +666,7 @@ const Util = {
                 Par.imgScale = Par.scaleBig;
                 Par.scaleSmall = Par.scaleBig;
                 rotatez = Par.rotatez;
-                style = {"transition":"all 0.4s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(Par.scaleBig)+")"};
+                style = {"transition":"all 0.2s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(Par.scaleBig)+")"};
                 break;
             case 2:
                 if(Par.scaleSmall<=0.3){
@@ -680,17 +680,17 @@ const Util = {
                 Par.imgScale = Par.scaleSmall;
                 Par.scaleBig = Par.scaleSmall;
                 rotatez = Par.rotatez;
-                style = {"transition":"all 0.4s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(Par.scaleSmall)+")"};
+                style = {"transition":"all 0.2s","transform": "rotateZ("+rotatez+"deg) scale("+Math.abs(Par.scaleSmall)+")"};
                 break;
             case 3:
                 rotatez = Par.rotatez -= 90;
                 scale = Par.imgScale;
-                style = {"transition":"all 0.4s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
+                style = {"transition":"all 0.2s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
                 break;
             case 4:
                 rotatez = Par.rotatez += 90;
                 scale = Par.imgScale;
-                style = {"transition":"all 0.4s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
+                style = {"transition":"all 0.2s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
                 break;
             case 'r':
                 style = {"transition":"all .2s","transform":"rotateZ("+Par.rotatez+"deg) scale("+Math.abs(Par.imgScale)+")"};
@@ -735,8 +735,8 @@ const Util = {
           
         for (let k=0;k<obj.length;k++){
 
-            var formData = new FormData();//这里需要实例化一个FormData来进行文件上传
-            var filesId = Util.getFielId();
+            let formData = new FormData();//这里需要实例化一个FormData来进行文件上传
+            let filesId = Util.getFielId();
             formData.append("fileByte",obj[k].fileObj);
             formData.append("batchId",Par.batchId[0]);
             formData.append("fileId",filesId);
@@ -746,9 +746,9 @@ const Util = {
 
                 Util.postRequest('/imageUploadServices/uploadDocument',formData,(res)=>{
                     //window.console.log(res);
-                    if(res.body.status==200){
+                    if(res.body.status==200||res.body.status=='200'){
 
-                        var id= res.body.data.purl;
+                        let id= res.body.data.purl;
                         id = id.substring(id.lastIndexOf('/'),id.length);
 
                         Par.uploadFileArr[k].state = 1;
@@ -767,6 +767,10 @@ const Util = {
                 
                 Util.showModelTip('warning','上传失败!');
                 return false;
+            }
+
+            if(k == obj.length){
+                Par.uploadFileArr = [];//清空
             }
 
         } 
@@ -838,7 +842,8 @@ const Util = {
             break;
         }
         return icon;
-    }
+    },
+    
 
 }
 

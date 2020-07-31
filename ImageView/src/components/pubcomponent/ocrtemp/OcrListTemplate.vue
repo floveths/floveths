@@ -1,7 +1,7 @@
 <template>
     <div>
 
-        <div class="wxocrInfoBox" >
+        <div class="imageOcrInfoBox" >
 
             <div class="image-info panel panel-info">
                 <div class="panel-heading">
@@ -671,12 +671,11 @@ export default {
     padding: 0px;
 }
 
-.wxocrInfoBox{
+.imageOcrInfoBox{
     width: auto;
     height: auto;
     font-size: 10pt;
     border-radius: 5px;
-    z-index: 9999;
     position: relative;
     background: linear-gradient(120deg, #7df395, #7dbafa);
 

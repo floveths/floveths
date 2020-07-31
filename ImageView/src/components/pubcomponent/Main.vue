@@ -53,7 +53,9 @@
                                 <span class="elSubSpan">档案归档</span>
                             </template>
                             <el-menu-item-group>
-                                <router-link :to="{name:'documentfiling'}" ><el-menu-item index="2-1">凭证归档</el-menu-item></router-link>
+                                <router-link :to="{name:'advancedquery'}" ><el-menu-item index="2-1">高级查询</el-menu-item></router-link>
+                                <router-link :to="{name:'electroncinvoice'}"><el-menu-item index="2-2">电子发票</el-menu-item></router-link>
+                                <router-link :to="{name:'displayboard'}"><el-menu-item index="2-3">统计展板</el-menu-item></router-link>
                             </el-menu-item-group>
                         </el-submenu>
 
@@ -142,12 +144,12 @@ export default {
     data : function(){
         return {
             isCollapse : false,
-            contentLeftStyle : {'width':'270px'}
+            contentLeftStyle : {'width':'200px'}
         }
     },
     watch : {
         isCollapse : function(){
-            this.isCollapse==true?this.contentLeftStyle={'width':'65px'}:this.contentLeftStyle={'width':'270px'}
+            this.isCollapse==true?this.contentLeftStyle={'width':'65px'}:this.contentLeftStyle={'width':'200px'}
         }
     },
     methods : {
@@ -214,8 +216,9 @@ export default {
 }
 
 .applogo ul li{
-    width: 175px;
+    width: 125px;
     float: left;
+    line-height: 40px;
 }
 
 .applogo ul li img{
@@ -225,7 +228,7 @@ export default {
 .applogo ul li i{
     text-align: left;
     margin-left: 15px;
-    font-size: 18pt;
+    font-size: 16pt;
     display: block;
     cursor: pointer;
     color: #696f77;
@@ -276,6 +279,11 @@ a{
     text-decoration: none !important;
 }
 
+.el-submenu .el-menu-item{
+    width: 162px !important;
+    min-width: 160px !important;
+}
+
 .el-menu-item:focus, .el-menu-item:hover { 
     border-right: 6px solid #449cc7;
     
@@ -301,7 +309,7 @@ a{
     box-shadow: 0 1px 4px rgba(0,21,41,.08);
     .contentLeftBar{
         height: 100%;
-        width: 225px;
+        width: 185px;
         overflow-y: scroll;
     }
 }

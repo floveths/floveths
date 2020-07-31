@@ -141,7 +141,7 @@
         </transition>
        
         <transition name="up">
-            <correctimage v-show="showRotateProgressBar" :closemodel="showRotateModel" :isfull="isCorrect" :rotatevalue="rotateValue"></correctimage>
+            <correctimagebar v-show="showRotateProgressBar" :closemodel="showRotateProgressBar = false" :isfull="isFullCorrect" :rotatevalue="rotateValue"></correctimagebar>
         </transition>
         
         <transition name="up">        
@@ -149,8 +149,13 @@
         </transition>
         
         <transition name="up">
-            <imagedialog :imgSrc="bigImgUrl" v-show="isShowBigImg" @closeModel="closeDialogModel" :appPoolData="appListData" :barType="dialogBarType" :ticketId="ticketId" ></imagedialog>
+            <imagedialog :imgSrc="bigImgUrl" v-show="isShowBigImg" @closeModel="isShowBigImg = false" :appPoolData="appListData" :barType="dialogBarType" :ticketId="ticketId" ></imagedialog>
         </transition>
+
+        <transition name="up">
+            <correctimagedialog :imgSrc="bigImgUrl" v-show="showCorrectDialog" @closeModel="correctImageModel"></correctimagedialog>
+        </transition>
+
     </div>
 
 </template>
@@ -161,13 +166,14 @@ import par from '../../utils/param'
 import util from '../../utils/util'
 import '../../assets/css/ztree.css'
 import scanTree from '../pubcomponent/treemanage/ScanTree'
-import correctImage from '../pubcomponent/imagebox/CorrectImage'
+import correctImageBar from '../pubcomponent/imagebox/CorrectImageBar'
 import imageDialog from '../pubcomponent/imagedialog/ImageModelDialog'
 import initStateProgress from '../pubcomponent/imagebox/InitStateProgress'
 import imageComponent from '../../components/pubcomponent/imagebox/ImageComponent'
 import fileListView from '../../components/pubcomponent/filemanage/FileViewBox'
 import smallAppFolder from '../../components/pubcomponent/smallappfolder/AppFolder'
 import fileUpload from '../../components/pubcomponent/fileupload/FileUploadTemp'
+import correctImageDialog from '../../components/pubcomponent/imagedialog/CorrectImageDialog'
 import smallApppool from '../../components/pubcomponent/smallappfolder/smallapppool/AppPool'
 import uploadProgressBar from '../../components/pubcomponent/imageuploadbar/UploadProgressBar'
 
@@ -191,13 +197,14 @@ export default {
             'isSave' : 0,//初始化未上传
             'pageOp' : '',
             'appListData' : [],
-            'isCorrect' : false,
+            'isFullCorrect' : false,
             'rotateValue' : 1,
             'bigImgUrl' : null,
             'deviceValue' : '',
+            'dialogBarType' : 0,
             'showPdfBox' : false,
             'isShowBigImg' : false,
-            'dialogBarType' : 0,
+            'showCorrectDialog' : false,
             'showInitImgProgress' : false,
             'deviceOptions' : par.deviceOptions,
             'pageOptions' : [{'label':'单面','value':'1'},{'label':'双面','value':'2'}],
@@ -215,12 +222,13 @@ export default {
         'fileupload' : fileUpload,
         'imagedialog' : imageDialog,
         'filelistview' : fileListView,
-        'correctimage' : correctImage,
         'smallapppool' : smallApppool,
         'smallappfolder' : smallAppFolder,
+        'correctimagebar' : correctImageBar,
         'imgtempcomponent' : imageComponent,
         'initstateprogress' : initStateProgress,
         'uploadprogressbar' : uploadProgressBar,
+        'correctimagedialog' : correctImageDialog
         
     },
     beforeMount : function(){
@@ -232,7 +240,7 @@ export default {
 
     },
     mounted(){
-        util.getRequest('/imageUploadServices/0001A91000000000Z34K',(res)=>{
+        util.getRequest('/imageUploadServices/0001A91000000000YINI',(res)=>{
 
             if(res.body.status=="200"||res.body.status==200){
                 par.batchId.push(res.body.data.batchId);
@@ -304,7 +312,7 @@ export default {
 
                 let fileSize = util.getFileSize(f.size);
                 let name = f.name;
-                 name = name.substring(name.lastIndexOf('.'),name.length);
+                name = name.substring(name.lastIndexOf('.'),name.length);
                 if(name!='.jpg'&&name!='.png'&&name!='bmp'&&name!='tif'&&name!='gif'&&name!='pcx'&&name!='tga'&&name!='exif'&&name!='fpx'&&name!='webp'){
                     par.uploadFileArr.push({'fileObj':f,'fileName':f.name,'fileSize':fileSize,'state':0});
                 }else{
@@ -388,19 +396,16 @@ export default {
                 if(k.fielId == delArr[0]){
                     imgSrc = k.imageSrc;
                 } 
-            })
+            });
 
-            this.appListData = [];
             this.ticketId = delArr[0];
             this.bigImgUrl = imgSrc;
-            this.dialogBarType = 2;
-            this.isShowBigImg = true;
-
+            this.showCorrectDialog = true;
         },
         showBigImage(msg){
+            this.appListData = [];
             this.bigImgUrl = msg.url;
             this.ticketId = msg.fileId;
-            this.appListData = [];
             this.dialogBarType = msg.barType;
 			this.isShowBigImg = true;
         },
@@ -418,57 +423,50 @@ export default {
             this.showOprationBar = true;
 			this.isShowBigImg = true;
         },
-        closeDialogModel(msg){
-            let isRotate = msg.rotate;
-            par.pickImage = [];
-            this.isShowBigImg = msg.close;
-
-            if(isRotate==2){
-
-                this.isShowBigImg = msg.close;
-                
-                par.pickImage = [];
-
-                let fileId = msg.fileId;
-                let isUpload;
-                par.imgTotalArr.find((k)=>{
-                    if(k.imgFielId == fileId){
-                        isUpload = k.isUpload
-                        return;
-                    }
-                });
-
-                let interVal = null;
-                this.showRotateProgressBar = true;
-
-                let count = 10;
-                interVal = window.setInterval(()=>{
-
-                    let m = Math.random().toFixed(0,2)
-                    count+=(count*(m*2));
-                    if(parseInt(count) >= 45){
-                        window.clearInterval(interVal);
-                    }else if(parseInt(count) >= 100){
-                        window.clearInterval(interVal);
-                    }
-                    this.rotateValue = count;
-                
-                },800);
-
-                if(isUpload!=true){
-
-                    util.correctBase64Img(this.bigImgUrl,par.rotatez,(res)=>{
-                        window.console.log(res);
-                    });
-                    
-                }else{
-                    util.postRequest(`/imageServices/updateDegree/${fileId}/${par.rotatez}`,{},(res)=>{
-                        window.console.log(res);
-                    })
-                }
-                this.showRotateModel();
-            }
+        correctImageModel(){
+            this.showCorrectDialog = false;
             
+            par.pickImage = [];
+            let fileId = this.ticketId;
+
+            let isUpload;
+            par.imgTotalArr.find((k)=>{
+                if(k.imgFielId == fileId){
+                    isUpload = k.isUpload
+                    return;
+                }
+            });
+
+            let interVal = null;
+            this.showRotateProgressBar = true;
+
+            let count = 10;
+            interVal = window.setInterval(()=>{
+
+                let m = Math.random().toFixed(0,2)
+                count+=(count*(m*2));
+                if(parseInt(count) >= 45){
+                    window.clearInterval(interVal);
+                }else if(parseInt(count) >= 100){
+                    window.clearInterval(interVal);
+                }
+                this.rotateValue = count;
+            
+            },800);
+
+            if(isUpload!=true){
+
+                util.correctBase64Img(this.bigImgUrl,par.rotatez,(res)=>{
+                    window.console.log(res);
+                });
+                
+            }else{
+                util.postRequest(`/imageServices/updateDegree/${fileId}/${par.rotatez}`,{},(res)=>{
+                    window.console.log(res);
+                })
+            }
+            //this.showRotateModel();
+            this.showRotateProgressBar = false;
         },
         saveImg(){
 
@@ -509,9 +507,6 @@ export default {
                 }
                 
             }
-        },
-        showRotateModel(){
-            this.showRotateProgressBar == true?false:true;
         }
     }
 }
