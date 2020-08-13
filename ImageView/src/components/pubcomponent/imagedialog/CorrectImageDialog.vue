@@ -22,7 +22,7 @@
             <div class="bottomBar">
 
                 <div class="rotateBar" >
-                    <i class="el-icon-plus" v-on:click="bigImage(1)"></i>
+                    <i class="el-icon-plus" v-on:click="oprateBigImage(1)"></i>
                     <span >0°</span>
                     <div class="rotateBarContent">
                         <p class="rotateText" id="rotateText" >0°</p>
@@ -30,7 +30,7 @@
                         <div class="rotateCircle" id="rotateCircle" ></div>
                     </div>
                     <span>360°</span>
-                    <i class="el-icon-minus" v-on:click="bigImage(2)"></i>
+                    <i class="el-icon-minus" v-on:click="oprateBigImage(2)"></i>
                 </div>
                 
             </div>
@@ -64,8 +64,8 @@ export default {
         closeModel (){
             this.$emit('closeModel');
         },
-        bigImage : function(id){
-           var style = util.bigImage(id);
+        oprateBigImage : function(id){
+           var style = util.oprateBigImage(id);
            this.bigImgStyle = style;
         },
         slideBarToTransfer(){
@@ -99,7 +99,7 @@ export default {
                     rotateProgress.style.width = pageX + 'px';
                     par.rotatez = Math.floor(pageX * 1.64);
                     rotateText.innerText =  par.rotatez + '°';
-                    _this.bigImage('r');
+                    _this.oprateBigImage('r');
 
                 }
             }

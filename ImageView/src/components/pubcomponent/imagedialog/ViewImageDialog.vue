@@ -12,9 +12,9 @@
                     <div class="imgContentLeft" >
                         <i class="el-icon-arrow-left" @click="slideImgLeft"></i>
                     </div>
-                    <div class="imgContentCenter">
-                        <div class="contentImgBox" id="contentImgBox">
-                            <img :src="'http://47.92.211.214:8080/'+imgUrl" v-bind:style="bigImgStyle" id="ImageBox"> 
+                    <div class="imgContentCenter" id="imgContentCenter">
+                        <div class="contentImgBox" id="viewContentImgBox">
+                            <img :src="'http://47.92.211.214:8080/'+imgUrl" v-bind:style="bigImgStyle" id="viewImageBox"> 
                         </div>
                     </div>
                     <div class="imgContentRight" >
@@ -31,11 +31,11 @@
 
             <div class="bottomBar">
                 <div class="barBox" >
-                    <i class="el-icon-refresh-left" v-on:click="bigImage(3)"></i>
-                    <i class="el-icon-plus" v-on:click="bigImage(1)"></i>
-                    <i v-on:click="bigImage(0)"><span>1:1</span></i>
-                    <i class="el-icon-minus" v-on:click="bigImage(2)"></i>
-                    <i class="el-icon-refresh-right" v-on:click="bigImage(4)"></i>
+                    <i class="el-icon-refresh-left" v-on:click="oprateBigImage(3)"></i>
+                    <i class="el-icon-plus" v-on:click="oprateBigImage(1)"></i>
+                    <i v-on:click="oprateBigImage(0)"><span>1:1</span></i>
+                    <i class="el-icon-minus" v-on:click="oprateBigImage(2)"></i>
+                    <i class="el-icon-refresh-right" v-on:click="oprateBigImage(4)"></i>
                 </div>
             </div>
 
@@ -52,37 +52,33 @@ export default {
     props :['imgUrl','ocrInfoList'],
     data : function(){
         return {
-            'bigImgStyle' : {},
-            'totalCount': 0
-            
+            'totalCount': 0,
+            'bigImgStyle' : {}
         };
     },
     components : {
         'ocrtemplate' : ocrTemplate
     },
-    watch : {
-        
-    },
     mounted : function(){
-
-        util.moveImage('contentImgBox','ImageBox');
-        this.bigImgStyle = util.scrollImage('ImageBox');
         
+        util.moveImage('viewContentImgBox','viewImageBox');
+        this.bigImgStyle = util.scrollImage('viewImageBox');
     },
     methods : {
         closeModel (){
             this.$emit('closeModel');
         },
-        bigImage : function(id){
-           var style = util.bigImage(id);
+        oprateBigImage : function(id){
+           var style = util.oprateBigImage(id);
            this.bigImgStyle = style;
         },
         slideImgLeft : function(){
-            util.bigImage('s');
+            util.oprateBigImage('s');
             this.$emit('slideImgLeft');
         },
         slideImgRight : function(){
-            util.bigImage('s');
+            util.oprateBigImage('s');
+
             this.$emit('slideImgRight');
         },
         getOcrInfo(id){

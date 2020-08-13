@@ -1,17 +1,17 @@
 <template>
     <div>
-        <div class="boxView">
+        <div class="boxView" id="boxView">
 			<div class="content">
 				<div class="row">
 					<div class="col-md-12">
-						<div class="panel panel-default" v-for="(pdata,index) in data" style="margin: 20px 0px;"  v-show="pdata.typeNum > 0"  v-bind:key="index">
+						<div class="panel panel-default" v-for="(pdata,index) in data" style="margin: 20px 15px;"  v-show="pdata.typeNum > 0"  v-bind:key="index">
 							<div class="panel-heading text-center">
 								<span>{{pdata.typeName}} 共 {{pdata.typeNum}} 张影像</span>
 							</div>
 							
 							<div class="panel-body" :title="pdata.id">
 								<vuedragable v-model="pdata.children" group="people" v-bind="dragOptions" @start="dragStart($event,index)" @end="dragEnd" class="row">
-									<div class=" col-md-3 col-sm-3 col-xs-6 dragItem" 
+									<div class=" col-md-3 col-ml-4 col-sm-3 col-xs-6 dragItem" 
 										v-for="(data,s) in pdata.children"
 										:data-fileid="data.fielId"
 										:data-name="data.name"
@@ -34,15 +34,15 @@
 							</div>
 						</div>
 
-						<div class="panel panel-default"  style="margin-top: 20px;"  v-show="attchListData.length > 0 && attachBox"  >
+						<div class="panel panel-default"  style="margin: 20px 15px;"  v-show="attchListData.length > 0 && attachBox"  >
 							<div class="panel-heading text-center">
 								<span> 共 {{attchListData.length}} 个附件</span>
 							</div>
 
 							<div class="panel-body" >
 								<vuedragable v-model="attchListData" group="people" v-bind="dragOptions" @start="dragFiles" class="row">
-									<div class=" col-md-2 col-sm-3 col-xs-6 dragItem" v-for="(data,index) in attchListData"  :key="index">
-										<div class="img-thumbnails" style="height:120px !important" :itemid="data.fileId">
+									<div class=" col-md-3 col-ml-4 col-sm-3 col-xs-6 dragItem" v-for="(data,index) in attchListData"  :key="index">
+										<div class="img-thumbnails" style="height:130px !important" :itemid="data.fileId">
 											<img v-bind:src="data.fileIcon" @dblclick="viewPdfDoc" v-bind:name="data.fileId"  >	
 											<input type="text" :value="data.fileName" class="reImgName" readonly="readonly" />
 										</div>
@@ -167,7 +167,8 @@ export default {
 			pId = pId.split('-');
 			cId = cId.split('-');
 			let type = par.imgViewArr[index].type;
-			if(type == 'i'){
+			
+			if(type == 'i'||type == 'u'){
 				url = par.imgData[pId[1]].children[cId[1]].imageSrc;
 				let msg = {'url':url,'fileId':e.target.name,'barType':1};
 				this.$emit('showBigImg',msg)
@@ -211,8 +212,7 @@ export default {
 		},
 		dragFiles(e){
 			let id =e.item.childNodes[0].attributes.itemid.value;
-			//window.console.log(id);
-			this.dragType = 'f';
+			this.dragType = 'F';
 			this.dragDelete.push(id);
 		},
 		dragStart(e,index) {
@@ -256,10 +256,18 @@ export default {
 
 			if(this.dragDelete.length>0){
 
-				if(this.dragType=='f'){
-					let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.dragDelete[0]};
-					util.deleteRequest('/imageUploadServices',parm,(res)=>{
-						window.console.log(res);
+				if(this.dragType=='F'){
+					let arr = this.dragDelete;
+					let parm = {"businessSerialNo": par.businessSerialNo,"fileId":arr};
+					util.deleteRequest('/imageUploadServices',{body:parm},(res)=>{
+						
+						if(res.body.status == "200"){
+							util.showModelTip('success','删除成功!');
+							util.reloadDataByDelete(arr,'F');
+						}else{
+							util.showModelTip('success','删除失败!');
+							return false;
+						}
 					})
 				}else{
 					var index = this.dragDelete[0].nodeIndex;
@@ -332,15 +340,23 @@ export default {
 	transition: opacity 0.5s linear;
 }
 
+@media screen (min-width: 1024px){
+	.col-ml-4{
+		background: red;
+		flex: 0 0 33%;
+		max-width: 33%;
+	}
+}
+
 .boxView{
 	width: 100%;
-	height: 100%;
+	height: calc(100vh - 50px);
 	position: relative;
 
 	.trashBox{
 		width: 60px;
 		height: 60px;
-		border: 1px solid rgb(241, 241, 241);
+		z-index: 10;
 		position: fixed;
 		bottom: 0;right: 0;
 		margin: 15px 35px;
@@ -348,6 +364,7 @@ export default {
 		text-align: center;
 		background: white;
 		box-shadow: 0px 4px 8px #ccc;
+		border: 1px solid rgb(241, 241, 241);
 	}
 	.trashIcon{
 		color: #ffaf17;
@@ -357,8 +374,10 @@ export default {
 
 
 .panel{
+	border-radius: 5px;
 	background: white !important;
-	box-shadow: 0px 5px 20px #a8a8a8 !important;
+	box-shadow: 0px 2px 10px #b1b1b1 !important;
+
 }
 
 .panel-default{
@@ -416,14 +435,15 @@ export default {
 	position: relative;
 	max-width: 100%;
 	padding: 4px;
-	background-color: #fff;
-	border: 1px solid #ddd;
 	border-radius: 4px;
 	cursor: pointer;
 	overflow: hidden;
-	margin-bottom: 8px;
+	margin: 10px 0px;
 	height: 165px !important;
 	width: 100% !important;
+	background: #f9f9f9;
+	box-shadow: 0px 4px 12px #d1d1d1;
+
 	> img{
 		max-width: 100%;
 		height: 100%;
@@ -486,7 +506,7 @@ export default {
 	font-size: 10pt;
 	bottom: 0;
 	margin-left: -4px;
-	background: white;
+	background: #f9f9f9;
 }
 
 .imgErrorTip{
@@ -614,6 +634,5 @@ export default {
 	position: absolute;
 	transform: skew(30deg);
 }
-
 
 </style>

@@ -11,6 +11,7 @@ import Router from '../router/router'
 
 vueObj.use(Resouce);
 let imgUrl = '';
+let vue = null;
 let ws = new WebSocket("ws://127.0.0.1:11345/Laputa");
 
 const Util = {
@@ -35,15 +36,6 @@ const Util = {
                 Util.uploadComplete(obj);
             } else if (obj.InterFace == "GetNICVersion"){
                 
-                /*Vue.http.post('/ControlUpload/authorizationValidation',{"NICVersion":obj.version},{emulateJSON: true}).then((res)=>{
-                    if(res.body.status==200||res.body.status=="200"){
-                        if(res.body.message=="false"||res.body.message==false){
-                            that.isValide = false;
-                            swal("提示!","当前设备已超过授权数!",'warning');
-                            return false;
-                        }
-                    }
-                });*/
                 Util.postRequest('/ControlUpload/authorizationValidation',{"NICVersion":obj.version},(res)=>{
                     if(res.body.message=="false"||res.body.message==false){
                         
@@ -88,6 +80,7 @@ const Util = {
                 
                 Util.buildGrid(obj);
             } else if (obj.InterFace == "Transmission_WebToLocal") {
+                vue.computeScrollBar();
                 Store.commit('showImgByFileId',obj.FileId);
             } 
         };
@@ -375,6 +368,7 @@ const Util = {
         return str==null||str=='null'?'':str;
     },
     drawPicture(vueO,obj,fileSize){
+        vue = vueO;
         Par.uploadImgCount++;
         let src = window.URL.createObjectURL(obj);
         let dataURL = null;
@@ -445,6 +439,7 @@ const Util = {
         $.fn.zTree.init($("#treeDemo"), Par.setting, Par.ticketNodes);
         
     },
+    /*排序*/
     sortTreeAndImg: function(pId,fileId,index,flag){
        
         for(let i=0;i<Par.imgData.length;i++){
@@ -531,6 +526,42 @@ const Util = {
         Par.nodeName = name;
         Par.ticketNodes[0].children = Par.imgData;
     },
+    reloadDataByDelete :function(arr,type){
+        let a = arr;
+        if(a.length > 0 && type== 'F'){
+            let id = a[0];
+            
+            let data = Par.fileListData;
+            for(let k=0;k<data.length;k++){
+                if(data[k].fileId == id){
+                    arr.splice(0,1);
+                    Par.fileListData.splice(k,1);
+                    Par.fileNodes[0].children.splice(k,1);
+                    break;
+                }
+            }            
+
+            Util.reloadDataByDelete(arr,"F");
+        }
+
+        if(arr.length > 0 && type=="I"){
+            arr.find((k,i)=>{
+                k.children.find((s,j)=>{
+                    Par.pickImage.find((o)=>{
+                        
+                        if(s.fielId == o){
+                            k.typeNum--;
+                            if(k.isUpload == false){
+                                this.$store.commit('changeUploadImgCount','-');
+                            }
+                            Par.imgData[i].children.splice(j,1);
+                        }
+                    })
+                })
+            })
+        }
+        Util.reloadTree();
+    },
     addTypeNum : function(id){
         let index = 0;
         Par.imgData.find((i,r)=>{
@@ -568,7 +599,7 @@ const Util = {
                         Store.commit('changeImgCount','+');
                         
                         Par.imgData[k].children.push({'imageSrc':arr1[o].url,'fielId':arr1[o].fileId,'imgName':arr1[o].fileName,name:arr1[o].fileName,'show':'true','curImgIndex':Par.curImgIndex,'isUpload':true,'imgTip':'imgSucTip'});
-                        Par.imgViewArr.push({'pId':'p-'+k,"cId":'c-'+(Par.imgData[k].children.length-1)});//存储图片 查看大图时使用
+                        Par.imgViewArr.push({'pId':'p-'+k,"cId":'c-'+(Par.imgData[k].children.length-1),'type':'u'});//存储图片 查看大图时使用
                     }
                 }
             } 
@@ -630,6 +661,7 @@ const Util = {
                 var y = oEvent.clientY -disY;
                 img.style.marginTop = y+'px';
                 img.style.marginLeft = x+'px';
+                img.style.transition = 'all 0s';
             }
             
             box.onmouseleave = function () {
@@ -647,7 +679,7 @@ const Util = {
 
     }, 
     /*操作大图 */
-    bigImage (num){
+    oprateBigImage (num){
         var rotatez = 0;
         var scale = 0;
         var style = null;
@@ -693,16 +725,17 @@ const Util = {
                 style = {"transition":"all 0.2s","transform":"rotateZ("+rotatez+"deg) scale("+Math.abs(scale)+")"};
                 break;
             case 'r':
-                style = {"transition":"all .2s","transform":"rotateZ("+Par.rotatez+"deg) scale("+Math.abs(Par.imgScale)+")"};
+                style = {"transition":"all 0.2s","transform":"rotateZ("+Par.rotatez+"deg) scale("+Math.abs(Par.imgScale)+")"};
                 break;
             case 's':
                 Par.rotatez = 0, Par.imgScale = Par.scaleSmall = Par.scaleBig = 1;
-                style = {"transition":"all 0s","transform":"rotateZ("+Par.rotatez+"deg) scale("+Math.abs(Par.imgScale)+")"};
+                style = {"transition":"all 0s","transform":"rotateZ("+Par.rotatez+"deg) scale("+Math.abs(Par.imgScale)+")","margin-top":"auto","margin-left: ":"auto"};
                 break;
         }
         return style;
 
     },
+    /*滚动图片*/
     scrollImage(target){
         var flag = false;
         var img = document.getElementById(target);
@@ -714,9 +747,9 @@ const Util = {
                 
                     var del = e.deltaY;
                     if(del > 0){
-                        img.style.transform = Util.bigImage(1).transform;
+                        img.style.transform = Util.oprateBigImage(1).transform;
                     }else{
-                        img.style.transform = Util.bigImage(2).transform;
+                        img.style.transform = Util.oprateBigImage(2).transform;
                     }
                 }
             }
@@ -745,15 +778,16 @@ const Util = {
             try{
 
                 Util.postRequest('/imageUploadServices/uploadDocument',formData,(res)=>{
-                    //window.console.log(res);
+                    
                     if(res.body.status==200||res.body.status=='200'){
 
                         let id= res.body.data.purl;
                         id = id.substring(id.lastIndexOf('/'),id.length);
 
                         Par.uploadFileArr[k].state = 1;
-                        let str = {'fileId':id,'fileName':obj[k].fileObj.fileName,'type':555,'id':id,'name':obj[k].fileObj.fileName};
+                        let str = {'fileId':id,'fileName':obj[k].fileName,'type':555,'id':id,'name':obj[k].fileName};
                         Par.fileListData.push(str);
+                        window.console.log(str);
 
                         Par.fileNodes[0].children.push(str);
                         $.fn.zTree.init($("#fileDemo"), Par.setting, Par.fileNodes); 
@@ -776,6 +810,7 @@ const Util = {
         } 
 
     },
+    /*矫正 */
     correctBase64Img(src, edg,callback) {
 
         var canvas = document.createElement("canvas");
@@ -815,6 +850,7 @@ const Util = {
             return (size/1024).toFixed(2)+'kB';
         }
     },
+    /*通过文件名获取类型 */
     getFileTypeByName(name){
         let icon = '';
         name = name.substring(name.toString().lastIndexOf('.'),name.length);
@@ -843,8 +879,54 @@ const Util = {
         }
         return icon;
     },
-    
+    /*滚动条 */
+    scrollView(obj,box,bar){
+        
+        obj.onmouseenter = function(){
+            let move = 0;
+            let barSide = document.getElementsByClassName(bar)[0];
+            let top = barSide.offsetTop;
+            let height = parseInt(barSide.style.height);
+            
+            if(top==null||top==''){
+                top = 0;
+            }else {
+                top = parseInt(barSide.offsetTop);
+            }
+            
+            if(barSide.parentNode.style.display=='block'){
+          
+                window.onwheel = function(e){
+                  
+                    if(e.deltaY > 0){
+                        
+                        if((top + height) < obj.clientHeight){
+                            top+=20;
+                        } else{
+                            top = (obj.clientHeight - height);
+                        }
+                        
+                    }else if(e.deltaY < 0){
+                       
+                        top-= 20;
+                        if(top < 0){
+                            top = 0;
+                        }
+                    }
 
+                    move = barSide.offsetTop/(obj.clientHeight - height);
+                    move = move * (box.scrollHeight - obj.clientHeight);
+                    
+                    box.style.marginTop = '-'+move+'px';
+                    barSide.style.marginTop = top+'px';
+                }
+            }
+        }
+
+        obj.onmouseleave = function(){
+            window.onwheel = null;
+        }
+    }
 }
 
 export default Util;

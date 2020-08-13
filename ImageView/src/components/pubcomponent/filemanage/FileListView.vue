@@ -1,11 +1,11 @@
 <template>
     <div class="fileListContent">
         <div class="row">
-            <div class="col-lg-6 col-md-6 col-xs-6" v-for="(item,i) in fileListData" :key="i">
+            <div class="col-md-6 col-xs-6" v-for="(item,i) in fileListData" :key="i">
                 <div class="fileContentBox" >
                     <img :src="item.fileIcon" class="fileImg">
-                    <input type="checkbox" :value="item.fileId" :id='item.fileId' @click="pickFile"  class="imgListFileCheck" />
-                    <label class="imgListFileLabel"  :for="item.fileId"></label>
+                    <input type="checkbox" :value="item.fileId" :id='item.fileId+i' @change="pickFile"  class="imgListFileCheck" />
+                    <label class="imgListFileLabel"  :for="item.fileId+i"></label>
                     <span class="fileListName" v-on:dblclick="viewPdfDoc" :value="item.fileId">{{item.fileName}}</span>
                 </div>
             </div>
@@ -13,19 +13,25 @@
     </div>
 </template>
 <script>
+import util from '../../../utils/util.js'
 import par from '../../../utils/param.js'
 
 export default {
     props : ['fileList'],
     data : function(){
         return {
-            'fileListData' : par.fileListData,
+            'fileListData' : par.fileListData
         }
     },
     watch : {
         fileList : function(){
             if(this.fileList!=null){
-                this.fileListData = this.fileList
+                
+                let arr = this.fileList.filter((i)=>{
+                    return i.fileIcon = util.getFileTypeByName(i.fileName);
+                });
+                window.console.log(11)
+                this.fileListData = arr;
             }
         }
     },
@@ -35,7 +41,8 @@ export default {
             this.$emit('viewPdfDoc',id);
         },
         pickFile(e){
-            this.$emit('pickFile',e.target.id);
+            
+            this.$emit('pickFile',e.target.value);
         }
     }
 }

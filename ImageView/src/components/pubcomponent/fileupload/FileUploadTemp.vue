@@ -7,7 +7,7 @@
                 <div class="row">
                     <div class="col-md-3 col-xs-3 col-sm-3" v-for="(data,i) in fileListData" :key="i">
                         <div class="fileContentBox" >
-							<img src="../../../../public/static/suc.png" class="imgTip" >
+                            <div class="imgSucTip imgTip"></div>
 							<img :src="data.fileIcon" class="fileImg">
 							<input type="checkbox" :id="data.fileId+'-'+i" v-model="pickFile" :value="data.fileId" class="imgListCheck" />
 							<label class="imgListLabel" :for="data.fileId+'-'+i"></label>
@@ -225,7 +225,7 @@ export default {
         .imgTip{
             top: 0;
             left: 0;
-            height: 65px !important;
+            height: 35px !important;
             width: 65px !important;
             position: absolute;
             background-size: cover;

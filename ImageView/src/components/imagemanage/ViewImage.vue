@@ -44,6 +44,7 @@
                         <div style="width:240px;overflow: auto;">
                             <ul class="ztree" id="treeDemo" style="margin:15px"></ul>
                         </div>
+                        <treescrollbar :bar="'bar0'" :sideScroll="showTreeScroll" :height="treeBarHeight"></treescrollbar>
                     </div>
                     <!-- <div class="contentLeftBar">
                         <div class="contentBarBox"><i class="el-icon-arrow-right" :class="treeClz" @click="slideTreeLeft"></i></div>
@@ -67,9 +68,10 @@
                         <div class="contentBarBox"><i class="el-icon-arrow-left" :class="ocrClz" @click="slideOcrRight"></i></div>
                     </div> -->
                     <div class="contentRightOcr" :style="{'width':ocrTWidth+'px'}">
-                        <div style="width:100%;overflow: auto;">
+                        <div style="width:100%;overflow: hidden;">
                             <ocrtemplate :type="1" :items="ocrInfoList"></ocrtemplate>
                         </div>
+                        <ocrscrollbar :bar="'bar1'" :sideScroll="showOcrScroll" :height="ocrBarHeight"></ocrscrollbar>
                     </div>
                     
                 </div>
@@ -81,7 +83,7 @@
             <div class="row">
                 <div class="col-md-2 col-sm-2"><i class="el-icon-refresh-left " @click="oprationImage(3)"><p>左旋转</p></i></div>
                 <div class="col-md-2 col-sm-2"><i class="el-icon-circle-plus-outline " @click="oprationImage(1)"><p>放大</p></i></div>
-                <div class="col-md-1 col-sm-1"><i class="el-icon-refresh" @click="revertImg" ><p>矫正影像</p></i></div>
+                <div class="col-md-1 col-sm-1"><i class="el-icon-refresh" @click="revertImage()" ><p>矫正影像</p></i></div>
                 <div class="col-md-2 col-sm-2"><i class="el-icon-video-pause " @click="oprationImage(0)"><p>原始大小</p></i></div>
                 <div class="col-md-1 col-sm-1"><i class="el-icon-document-checked" @click="checkImg" ><p>审核影像</p></i></div>
                 <div class="col-md-2 col-sm-2"><i class="el-icon-remove-outline " @click="oprationImage(2)"><p>缩小</p></i></div>
@@ -91,11 +93,11 @@
 
         <div class="viewFiles" v-show="showFileBox">
             <div style="width:100%;height:35px;padding:5px 20px;background:white;border-bottom:1px solid red;border-bottom: 1px solid #e5e5e5;box-shadow: 0px 5px 8px #d9d9d9;">
-                <span>附件一览</span>
+                <span>附件下载...</span> <i class="downFile el-icon-download" @click="downFile" ></i>
                 <span style="float:right;cursor: pointer;" @click="showFileBox=false"><i class="el-icon-close"></i></span>
             </div>
             <div style="margin-top:5px;height:calc(100vh - 140px);padding:0px 25px;">
-                <filelistview :fileList="documentList" @viewPdfDoc="viewPdfDoc" ></filelistview>
+                <filelistview :fileList="documentList" @pickFile="downFile" @viewPdfDoc="viewPdfDoc" ></filelistview>
             </div>
         </div>
 
@@ -113,6 +115,10 @@
             <correctimagedialog :imgSrc="bigImgUrl" v-show="showCorrectDialog" @closeModel="correctImageModel"></correctimagedialog>
         </transition>
 
+        <transition name="up">
+            <checkoutimage @closecheckimg="checkoutimage=false" v-show="checkoutimage"></checkoutimage>
+        </transition>
+
         <viewbigimagedialog v-show="viewDialog" @slideImgLeft="slideImgLeft" :ocrInfoList="ocrInfoList" @slideImgRight="slideImgRight" :imgUrl="bigImgUrl" @closeModel="viewDialog=false"></viewbigimagedialog>
 
     </div>
@@ -122,13 +128,16 @@ import $ from 'jquery'
 import util from '../../utils/util.js'
 import par from '../../utils/param.js'
 import '../../assets/css/ztree.css'
-import PdfDocView from '../pubcomponent/pdfdocdialog/PdfDocBox'
+import pdfDocView from '../pubcomponent/pdfdocdialog/PdfDocBox'
 import ocrTemplate from '../pubcomponent/ocrtemp/OcrListTemplate'
-import BigImageList from '../pubcomponent/imagebox/BigImageList'
-import FileListView from '../pubcomponent/filemanage/FileListView'
+import bigImageList from '../pubcomponent/imagebox/BigImageList'
+import fileListView from '../pubcomponent/filemanage/FileListView'
+import orcScrollBar from '../pubcomponent/scrollbarcomp/ScrollBarTemp'
+import treeScrollBar from '../pubcomponent/scrollbarcomp/ScrollBarTemp'
 import correctImageBar from '../pubcomponent/imagebox/CorrectImageBar'
-import SmallImageList from '../pubcomponent/imagebox/SmallImageList'
-import ViewBigImageDialog from '../pubcomponent/imagedialog/ViewImageDialog'
+import smallImageList from '../pubcomponent/imagebox/SmallImageList'
+import checkOutImage from '../pubcomponent/checkimage/ChckeOutImage'
+import viewBigImageDialog from '../pubcomponent/imagedialog/ViewImageDialog'
 import correctImageDialog from '../pubcomponent/imagedialog/CorrectImageDialog'
 
 export default {
@@ -152,6 +161,7 @@ export default {
             
             pdfUrl : '',
             pickImgArr : [],
+            pickFileArr : [],
             ocrInfoList : [],
             imageViewList : [],
             documentList : [],
@@ -161,20 +171,29 @@ export default {
             slideBoxOffset : 0,
             imgSlideOffset : 0,
             rotateValue : 0,
+            
             showFileBox : false,
+            checkoutimage : false,
             isFullCorrect : false,
             showCorrectDialog : false,
-            showRotateProgressBar : false
+            showRotateProgressBar : false,
+            'ocrBarHeight' : 0,
+            'showOcrScroll' : 'none',
+            'treeBarHeight' : 0,
+            'showTreeScroll' : 'none'
         }
     },
     components : {
-       'pdfdocview' : PdfDocView,
+       'pdfdocview' : pdfDocView,
        'ocrtemplate': ocrTemplate,
-       'filelistview' : FileListView,
-       'bigimagelist' : BigImageList,
-       'smallimagelist' : SmallImageList,
+       'ocrscrollbar' : orcScrollBar,
+       'filelistview' : fileListView,
+       'bigimagelist' : bigImageList,
+       'checkoutimage' : checkOutImage,
+       'treescrollbar' : treeScrollBar,
+       'smallimagelist' : smallImageList,
        'correctimagebar' : correctImageBar,
-       'viewbigimagedialog' : ViewBigImageDialog,
+       'viewbigimagedialog' : viewBigImageDialog,
        'correctimagedialog' : correctImageDialog
     },
     watch : {
@@ -193,30 +212,68 @@ export default {
 
         //this.computeBox();
         this.centerBox = (window.screen.width - 600);
-        this.loadData();
-        window.setTimeout(()=>{
-			this.addTreeClass(0,null);
-        },1500);
+        util.getRequest(`/webShowImage/0001A91000000000Z34K/${this.curPages}/15?t=953`,(res)=>{
+            
+            if(res.body.status==200||res.body.status=='200'){
+                
+                this.curPages = res.body.data.number;
+                this.imageViewList = this.imageViewList.concat(res.body.data.files) ;
+                this.totalPages = res.body.data.totalPages;
+                this.totalCount = res.body.data.totalElements;
+                
+                this.getTicketOcr();
+                window.setTimeout(()=>{
+                    this.addTreeClass(0,null);
+                    this.computeTreeScrollBar();
+                    util.scrollView(document.getElementsByClassName('contentLeftTree')[0],document.getElementsByClassName('ztree')[0],'bar0');
+                },1500);
+                par.ticketNodes[0].children = res.body.data.tree;
+                par.businessSerialNo = res.body.data.businessSerialNo;
+                $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+            }
+        })
+
         util.getRequest('/webShowImage/getDocumentList/0001A91000000000YINI',(res)=>{
             if(res.body.status=='200'||res.body.status==200){
                 this.documentList = res.body.data.files;
             }
-        })
+        });
+
+        let _this = this;
+        par.setting.callback.onClick = function(event, treeid, treenode){
+
+            let index = treenode.tId.substring(treenode.tId.lastIndexOf('_')+1,treenode.tId.length);
+            index = parseInt(index - 2);
+
+            if(index > (_this.curPages * 12)){
+                _this.curPages = Math.floor(_this.totalCount/index)+1;
+                _this.loadData();
+                _this.viewByIndex((index-1));
+
+                window.setTimeout(()=>{
+                    _this.bigImgUrl = _this.imageViewList[(index-1)].url;
+                },1500)
+            }else{
+                _this.bigImgUrl = _this.imageViewList[(index-1)].url;
+            }
+            
+            _this.viewDialog = true;
+        }
+        
     },
     methods : {
         checkImg(){
-
+            this.checkoutimage = true;
         },
         oprationImage(id){
             
-            let style = util.bigImage(id);
+            let style = util.oprateBigImage(id);
             let liImg = document.getElementById('liImg'+this.curImgIndex);
             liImg.style.transition = style.transition;
             liImg.style.transform = style.transform;
         },
         downLoadImg(){
             let url = `http://${par.baseUrl}/webShowImage/downloadImages/${par.businessSerialNo}`;
-
             window.location.href = url;
         },
         slideImgLeft(){
@@ -236,9 +293,9 @@ export default {
             this.getTicketOcr();
             this.offsetIndex = this.curImgIndex;
             this.bigUlOffset = this.offsetIndex * this.centerBox;
+
             this.bigImgUrl = this.imageViewList[this.curImgIndex].url;
             this.addTreeClass((this.curImgIndex + 1),this.curImgIndex);
-            
         },
         slideImgRight(){
             this.curImgIndex++;
@@ -256,6 +313,7 @@ export default {
 
             if((this.curImgIndex+1) == (this.curPages * 12)){
                 this.curPages+=1;
+                
                 if(this.curPages <= this.totalPages){
                     this.loadData();
                 }
@@ -264,6 +322,7 @@ export default {
             this.getTicketOcr();
             this.offsetIndex = this.curImgIndex;
             this.bigUlOffset = this.offsetIndex * this.centerBox;
+
             this.bigImgUrl = this.imageViewList[this.curImgIndex].url;
             this.addTreeClass((this.curImgIndex - 1),this.curImgIndex);
 
@@ -281,6 +340,24 @@ export default {
                     }
                 });
             }
+        },
+        downFile(val){
+            
+            if(typeof val != 'string'&&this.pickFileArr.length <= 0){
+                util.showModelTip('warning','请先勾选要下载的附件!');
+                return false;
+            }
+            if(this.pickFileArr.length<=0){
+                this.pickFileArr.push(val);
+            }else{
+                let arr = this.pickFileArr;
+                arr.find((i,k)=>{
+                    if(i==val){
+                        this.pickFileArr.splice(k,1);
+                    }
+                })
+            }
+            //批量下载代码
         },
         printImg(){
             if(this.pickImgArr.length <= 0){
@@ -353,7 +430,7 @@ export default {
             }
             
             this.viewByIndex(parseInt(this.jumpTo-1));
-            this.addTreeClass(parseInt(this.jumpTo-1),this.curImgIndex);
+            this.addTreeClass((this.curImgIndex-2),(this.jumpTo-1));
 
         },
         getTicketOcr(){
@@ -369,6 +446,10 @@ export default {
                     }
                     
                 }
+                window.setTimeout(()=>{
+                    this.computeOcrScrollBar();
+                    util.scrollView(document.getElementsByClassName('contentRightOcr')[0],document.getElementsByClassName('imageOcrInfoBox')[0],'bar1');
+                },1500)
             });
         },
         viewPdfDoc(id){
@@ -382,13 +463,9 @@ export default {
                 if(res.body.status==200||res.body.status=='200'){
                     
                     this.curPages = res.body.data.number;
-                    this.imageViewList = this.imageViewList.concat(res.body.data.files) ;
                     this.totalPages = res.body.data.totalPages;
                     this.totalCount = res.body.data.totalElements;
-                    this.getTicketOcr();
-                    par.ticketNodes[0].children = res.body.data.tree;
-                    par.businessSerialNo = res.body.data.businessSerialNo;
-                    $.fn.zTree.init($("#treeDemo"), par.setting, par.ticketNodes);
+                    this.imageViewList = this.imageViewList.concat(res.body.data.files);
                 }
             })
         },
@@ -401,7 +478,7 @@ export default {
                 $(".level2 .node_name").eq(oldIndex).parent().parent().removeClass("treeColor");
             }
         },
-        revertImg(){
+        revertImage(){
 
             this.bigImgUrl = this.imageViewList[this.curImgIndex].url;
             this.showCorrectDialog = true;
@@ -431,6 +508,36 @@ export default {
                 window.console.log(res);
             });
 
+        },
+        computeOcrScrollBar(){
+            var main = document.getElementsByClassName('contentRightOcr');
+            var box = document.getElementsByClassName('imageOcrInfoBox');
+
+            var mainHeight = parseInt(main[0].clientHeight);
+            var boxHeight = parseInt(box[0].scrollHeight);
+            var height =  (mainHeight/boxHeight)*mainHeight;
+            
+            if(height < mainHeight){
+                this.showOcrScroll = 'block';
+                this.ocrBarHeight = height;
+            }else{
+                this.showOcrScroll = 'none';
+            } 
+        },
+        computeTreeScrollBar(){
+            var main = document.getElementsByClassName('contentLeftTree');
+            var box = document.getElementsByClassName('ztree');
+
+            var mainHeight = parseInt(main[0].clientHeight);
+            var boxHeight = parseInt(box[0].scrollHeight);
+            var height =  (mainHeight/boxHeight)*mainHeight;
+            
+            if(height < mainHeight){
+                this.showTreeScroll = 'block';
+                this.treeBarHeight = height;
+            }else{
+                this.showTreeScroll = 'none';
+            } 
         }
     }
 }
@@ -442,6 +549,20 @@ export default {
 
 body{
     background: #f0f0f0;
+}
+
+.downFile{
+    width: 25px;
+    height: 25px;
+    color: white;
+    cursor: pointer;
+    text-align: center;
+    line-height: 25px;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 2px 10px -5px;
+    background:#76b7fb;
+    box-shadow: 0px 2px 4px #6accf2;
 }
 
 .navbar-top{
@@ -535,7 +656,8 @@ body{
     .contentLeftTree,.contentRightOcr{
         width: 280px;
         height: 100%;
-        overflow-y: auto;
+        position: relative;
+        //overflow-y: auto;
     }
 
     .contentLeftBar,.contentRightBar{
@@ -564,7 +686,8 @@ body{
 
 .slideViewBar{
 	width: 85%;
-	height: 40px;
+    height: 40px;
+    color: #484848;
     font-size: 16pt;
     margin: 10px auto;
     position: relative;
@@ -573,12 +696,12 @@ body{
     padding: 2px 0px;
     background: white;
     border-radius: 20px;
+    background: #f0f0f0;
     box-shadow: 0px 3px 6px #c9c9c9;
-	border-bottom: 1px solid #e9e9e9;
     
     p{
         margin: 2px 0px;
-        font-size: 9pt;
+        font-size: 8pt;
     }
 }
 
@@ -607,13 +730,30 @@ body{
     right: 0;
     bottom: 0;
     margin: auto;
-    width: 60%;
+    width: 280px;
     position: absolute;
-    z-index: 9999999;
-    height: calc(100vh - 100px);
+    z-index: 999;
+    height: 320px;
     background: #f9f9f9;
     border : 1px solid rgb(206, 206, 206);
     box-shadow: 0px 10px 25px  #ccc;
+    margin-right: 260px;
+    margin-top: 50px;
+}
+
+.viewFiles::before{
+    content: "";
+    top: -22px;
+    left: 0;
+    right: 0;
+    width: 20px;
+    margin: auto;
+    position: absolute;
+    border-bottom: 12px solid rgb(218, 218, 218);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid transparent;
+
 }
 
 .imgview-slidebar-left{
@@ -636,11 +776,9 @@ body{
     transform: rotateZ(180deg);
 }
 
-
 .treeColor{
 	border-radius: 5px;
 	background: linear-gradient(120deg,#b2f2c0,#aaeaff);
 }
-
 
 </style>

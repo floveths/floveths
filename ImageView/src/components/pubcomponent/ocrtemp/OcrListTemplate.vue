@@ -45,7 +45,6 @@
                             </ul>
 
                             <ul v-else-if="item.type=='101'" >
-                                <input type="hidden" v-model="fileId" />
                                 <li class="input-group ocrInfo"><div class="input-group-addon" >验真状态:</div>
                                     <input type="text" readonly="readonly" class="form-control" v-if="item.checkInvoice==1" value="已查验"/>
                                     <input type="text" readonly="readonly" class="form-control" v-else value="未查验"/></li>
@@ -62,8 +61,8 @@
                                 <li class="input-group ocrInfo" ><div class="input-group-addon" > 消费类型:</div><input type="text" readonly="readonly" class="form-control" v-model="item.kind"/></li>
                                 <li class="input-group ocrInfo"><div class="input-group-addon" >合计金额:</div>  <input type="text" readonly="readonly" class="form-control" v-model="item.lowercase" /></li>
                                 <li class="input-group ocrInfo"><div class="input-group-addon" >大写金额:</div> <input type="text" readonly="readonly" class="form-control" v-model="item.uppercase" /></li>
-                                <li class="input-group ocrInfo"><div class="input-group-addon" >发票代码:</div>  <input type="text" class="form-control five-el" v-model="invoiceCode"/></li>
-                                <li class="input-group ocrInfo"><div class="input-group-addon" >发票编号:</div>  <input type="text" class="form-control five-el" v-model="invoiceNumber"/></li>
+                                <li class="input-group ocrInfo"><div class="input-group-addon" >发票代码:</div>  <input type="text" class="form-control five-el" v-model="item.invoiceCode"/></li>
+                                <li class="input-group ocrInfo"><div class="input-group-addon" >发票编号:</div>  <input type="text" class="form-control five-el" v-model="item.invoiceNumber"/></li>
                                 <li class="input-group ocrInfo"><div class="input-group-addon" >开票日期:</div>  <input type="text" id="billDate" class="form-control five-el" v-model="item.invoiceDate"/></li>
                                 <li class="input-group ocrInfo"><div class="input-group-addon" >校验码:</div>  <input type="text" class="form-control five-el" v-model="item.jym " /></li>
 

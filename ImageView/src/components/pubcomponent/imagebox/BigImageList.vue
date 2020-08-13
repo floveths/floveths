@@ -2,7 +2,7 @@
     
     <div class="BigImageList">
         <ul class="imgview-bigimg" :style="{'width':ulWidth+'px','transition':'all 0.45s linear','transform':'translateX(-'+ulOffset+'px)'}">
-            <li v-for="(item,i) in bigImageList" :key="i" :style="{'width':width+'px'}" ><img :src="'http://47.92.211.214:8080'+item.url" :id="'liImg'+i" @dblclick="viewBigImage"  @:mouseenter="scaleImg" /> </li>
+            <li v-for="(item,i) in bigImageList" :key="i" :style="{'width':width+'px'}" ><img :src="'http://47.92.211.214:8080'+item.url" :id="'liImg'+i" @dblclick="viewBigImage"  @mouseenter="scaleImg" /> </li>
         </ul>
     </div>
 
@@ -19,7 +19,6 @@ export default {
     },
     watch : {
         count : function(){
-            
             this.ulWidth = this.width * this.count;
         }
     },

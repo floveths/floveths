@@ -123,6 +123,7 @@ export default {
         border-radius: 5px;
         overflow: hidden;
         position: relative;
+        background: #eaeaea;
         box-shadow: 2px 2px 4px #c6c6c6;
     }
 
@@ -165,6 +166,9 @@ export default {
     .imgName{
         height: 18px;
         border: 1px;
+        font-size: 8pt;
+        color: rgb(51, 51, 51);
+        background: transparent;
     }
 
     div{

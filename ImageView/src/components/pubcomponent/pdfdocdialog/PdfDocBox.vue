@@ -49,7 +49,7 @@ export default {
     background: rgba(209, 209, 209, 0.342);
     top:0;
     left: 0;
-    z-index: 999;
+    z-index: 9999;
 }
 
 .pdfContentBar{

@@ -3,12 +3,14 @@
     <div class="initStateBoxMain" >
 
         <div class="initStateBarBox" >
+            
             <div class="initStateBarTitle">
                 <span v-if="!$store.state.initImportComplete">加载中...</span>
                 <span v-if="$store.state.initImportComplete">加载完成</span>
                 <span><i class="el-icon-close" v-show="$store.state.initImportComplete||$store.state.initImportCount==0" @click="closeInitProgress"></i></span>
             </div>
             <div class="initStateBoxContent">
+                
                 <ul class="initImgUl" v-show="$store.state.initImportCount>0">
                     <li class="initContentLIHead"><span>影像列表...</span></li>
                     <li class="initContentLI">
@@ -54,6 +56,8 @@ import par from '../../../utils/param.js'
 export default {
     data : function(){
         return {
+            srcollBarHeight : 0,
+            showSideScroll : 'none',
             initImgData : par.imgData,
             initFileData : par.uploadFileArr
         }
@@ -99,6 +103,9 @@ export default {
         font-size: 12pt;
         cursor: pointer;
         padding: 5px 25px;
+        background:white;
+        position: relative;
+        width: 100%;
         justify-content: space-between;
         border-bottom: 1px solid #eaeaea;
     }
@@ -136,6 +143,7 @@ export default {
                 padding: 2px;
                 line-height: 30px;
                 font-size: 10pt;
+                overflow: hidden;
                 box-sizing: border-box;
                 border-bottom: 1px solid rgb(238, 238, 238);
                 > img{

@@ -23,7 +23,7 @@
                             <el-tag style="height:28.5px;" effect="dark" type="success" >共 &nbsp;{{$store.state.imgTotalCount}} &nbsp; 张影像</el-tag>
                         </li>
                         <li>
-                            <el-button type="primary" v-on:click="scanBtn" size="mini"><i class="el-icon-printer"></i> {{$t('l.scan')}}</el-button>
+                            <el-button type="primary" @click="scanBtn" size="mini"><i class="el-icon-printer"></i> {{$t('l.scan')}}</el-button>
                         </li>
                     </ul>
                 </div>
@@ -32,7 +32,7 @@
                     <ul>
                         <li>
                             <input type="file" id="importFile" multiple="multiple" ref="inputFile" @change="reSizePic" style="display: none;" />
-                            <el-button type="primary" v-on:click="importBtn" size="mini"><i class="el-icon-download"></i>&nbsp;本地导入</el-button>
+                            <el-button type="primary" @click="importBtn" size="mini"><i class="el-icon-download"></i>&nbsp;本地导入</el-button>
                         </li>
                         <li>
                             <div class="smallcode" v-show="showSmallCode" ><img src="../../../public/static/logo.png" /></div>
@@ -41,10 +41,10 @@
                         </li>
                         
                         <li>
-                            <el-button type="danger" v-on:click="delImg" size="mini"><i class="el-icon-delete"></i>&nbsp;删除</el-button>
+                            <el-button type="danger" @click="deleteImage" size="mini"><i class="el-icon-delete"></i>&nbsp;删除</el-button>
 						</li>
                         <li>
-                            <el-button type="success" v-on:click="saveImg" size="mini"><i class="el-icon-receiving"></i>&nbsp;保存</el-button>
+                            <el-button type="success" @click="saveImage" size="mini"><i class="el-icon-receiving"></i>&nbsp;保存</el-button>
                         </li>
                         <li>
                             <el-dropdown  >
@@ -60,17 +60,17 @@
                                 </el-dropdown-menu>
                             </el-dropdown>
 
-                            <!-- <el-button type="primary" v-on:click="commitImg" size="mini"><i class="el-icon-receiving"></i>&nbsp;提交</el-button> -->
+                            <!-- <el-button type="primary" @click="commitImg" size="mini"><i class="el-icon-receiving"></i>&nbsp;提交</el-button> -->
                         </li>
                         <li  v-bind:id="moveBar" >
-                            <div class="menuBar" v-on:click="showMenuBar"></div>
+                            <div class="menuBar" @click="showMenuBar"></div>
                             <div class="ullist" v-show="showBar">
                                 <ul >
                                     <li class="barLi" v-if="showCorrectImg">
-                                        <el-button type="info" v-on:click="revertImg" size="mini"><i class="el-icon-refresh"></i>&nbsp;影像矫正</el-button>
+                                        <el-button type="info" @click="revertImage" size="mini"><i class="el-icon-refresh"></i>&nbsp;影像矫正</el-button>
                                     </li>
                                     <li class="barLi" v-if="showFileUpBar">
-                                        <el-button type="success" v-on:click="$store.commit('showFileUpload')" size="mini"><i class="el-icon-message"></i>&nbsp;附件上传</el-button>
+                                        <el-button type="success" @click="$store.commit('showFileUpload')" size="mini"><i class="el-icon-message"></i>&nbsp;附件上传</el-button>
                                     </li>
                                     <li class="barLi">
                                         <el-select v-model="lang" size="mini" @change="changeLang" placeholder="请选择">
@@ -103,9 +103,9 @@
 
                 <!--画图区域-->
                 <el-main class="scanMain">
-
                     <imgtempcomponent :data='imgData' :attachBox="showAttachBox" @showBigImg="showBigImage"></imgtempcomponent>
 
+                    <scrollbar :bar="'bar'" :sideScroll="showSideScroll" :height="srcollBarHeight" ></scrollbar>
                 </el-main>
 
                 <el-aside v-bind:style="rightAsideWidth" class="scanAside">
@@ -118,7 +118,6 @@
                             <filelistview ></filelistview>
 
                         </div>
-                        
                     </div>
                 </el-aside>
             </el-container>
@@ -136,7 +135,7 @@
             <fileupload v-show="$store.state.showFileUpload" @uploadfile="showInitImgProgress=true"></fileupload>
         </transition>
 
-        <transition>
+        <transition name="up">
             <initstateprogress v-show="showInitImgProgress" @closeinitprogress="showInitImgProgress=false"></initstateprogress>
         </transition>
        
@@ -166,15 +165,16 @@ import par from '../../utils/param'
 import util from '../../utils/util'
 import '../../assets/css/ztree.css'
 import scanTree from '../pubcomponent/treemanage/ScanTree'
+import scrollBar from '../pubcomponent/scrollbarcomp/ScrollBarTemp'
 import correctImageBar from '../pubcomponent/imagebox/CorrectImageBar'
 import imageDialog from '../pubcomponent/imagedialog/ImageModelDialog'
 import initStateProgress from '../pubcomponent/imagebox/InitStateProgress'
-import imageComponent from '../../components/pubcomponent/imagebox/ImageComponent'
 import fileListView from '../../components/pubcomponent/filemanage/FileViewBox'
-import smallAppFolder from '../../components/pubcomponent/smallappfolder/AppFolder'
 import fileUpload from '../../components/pubcomponent/fileupload/FileUploadTemp'
-import correctImageDialog from '../../components/pubcomponent/imagedialog/CorrectImageDialog'
+import imageComponent from '../../components/pubcomponent/imagebox/ImageComponent'
+import smallAppFolder from '../../components/pubcomponent/smallappfolder/AppFolder'
 import smallApppool from '../../components/pubcomponent/smallappfolder/smallapppool/AppPool'
+import correctImageDialog from '../../components/pubcomponent/imagedialog/CorrectImageDialog'
 import uploadProgressBar from '../../components/pubcomponent/imageuploadbar/UploadProgressBar'
 
 export default {
@@ -196,6 +196,8 @@ export default {
             'ticketId' : '',
             'isSave' : 0,//初始化未上传
             'pageOp' : '',
+            'srcollBarHeight' : 0,
+            'showSideScroll' : 'none',
             'appListData' : [],
             'isFullCorrect' : false,
             'rotateValue' : 1,
@@ -214,11 +216,11 @@ export default {
             'showLeftContent' : false,
             'showRightContent' : false,
             'showRotateProgressBar' : false
-  
         }
     },
     components : {
         'scantree' : scanTree,
+        'scrollbar' : scrollBar,
         'fileupload' : fileUpload,
         'imagedialog' : imageDialog,
         'filelistview' : fileListView,
@@ -229,7 +231,6 @@ export default {
         'initstateprogress' : initStateProgress,
         'uploadprogressbar' : uploadProgressBar,
         'correctimagedialog' : correctImageDialog
-        
     },
     beforeMount : function(){
 
@@ -247,6 +248,10 @@ export default {
                 par.businessSerialNo = res.body.data.businessSerialNo;
                 util.uploadDataFromServer(res.body.data.tree,res.body.data.files);
                 
+                window.setTimeout(()=>{
+                    this.computeScrollBar();
+                    util.scrollView(document.getElementsByClassName('scanMain')[0],document.getElementById('boxView'),'bar');
+                },1500);
             }else{
                 util.getRequest('/imageUploadServices/batchId',(res)=>{
                     if(res.body.status==200){
@@ -261,6 +266,10 @@ export default {
         });
         util.initWS();
         util.initTreeNode();
+        window.setTimeout(()=>{
+            this.computeScrollBar();
+            util.scrollView(document.getElementsByClassName('scanMain')[0],document.getElementById('boxView'),'bar');
+        },2000)
     },
     methods:{
         changeLang (lang){
@@ -318,12 +327,11 @@ export default {
                 }else{
                     util.drawPicture(_this,f,fileSize);
                 }
-                
             }
-
+            
             util.uploadFiles(par.uploadFileArr);
         },
-        delImg(){
+        deleteImage(){
 
             let delArr = par.pickImage;
             if(delArr.length<=0){
@@ -336,51 +344,16 @@ export default {
                 let arr = par.imgData;
                 if(res.body.status == '200'||res.body.status == 200){
 
-                    
-                    arr.find((k,i)=>{
-                        k.children.find((s,j)=>{
-                            par.pickImage.find((o)=>{
-                                
-                                window.console.log(s.fielId == o);
-                                if(s.fielId == o){
-                                    k.typeNum--;
-                                    if(k.isUpload == false){
-                                        this.$store.commit('changeUploadImgCount','-');
-                                    }
-                                    par.imgData[i].children.splice(j,1);
-                                }
-                            })
-                        })
-                    })
-
-                    
-                    /* for(let i=0;i<arr.length;i++){
-                        let carr = arr[i].children;
-                        for(let k=0;k<carr.length;k++){
-                            for(let o=0;o<par.pickImage.length;o++){
-                                window.console.log(carr[k].fielId == par.pickImage[o],carr[k].fielId , par.pickImage[o])
-                                if(carr[k].fielId == par.pickImage[o]){
-                                
-                                    if(carr[k].isUpload == false){
-                                        this.$store.commit('changeUploadImgCount','-');
-                                    }
-                                    par.imgData[i].typeNum--;
-                                    par.imgData[i].children.splice(k,1);
-                                }
-                            }
-                            
-                        }
-                    } */
-                   
+                    util.reloadDataByDelete(arr,"I");
                 }
             });  
             let arr = document.getElementsByClassName('img-thumbnails');
             for(let o=0;o<arr.length;o++){
                 arr[o].style.border = '1px solid #ddd';
             }
-             //par.pickImage = [];//清空数组
+            //par.pickImage = [];//清空数组
         },
-        revertImg(){
+        revertImage(){
 
             let delArr = par.pickImage;
             if(delArr.length<=0){
@@ -468,7 +441,7 @@ export default {
             //this.showRotateModel();
             this.showRotateProgressBar = false;
         },
-        saveImg(){
+        saveImage(){
 
             var count = this.$store.state.uploadImgCount;
             if(count <= 0){
@@ -485,7 +458,7 @@ export default {
             }
             
             var objmsg = {InterFace: "Upload",Ip: par.serverIp.toString(),Port: parseInt(par.serverPort),SocketPort: parseInt(par.socketPort),Type: parseInt(1),files: uploadImages}
-            par.ws.send(JSON.stringify(objmsg));
+            util.sendInfo(JSON.stringify(objmsg));
             this.$store.commit('showImageUpload');
             
         },
@@ -507,6 +480,21 @@ export default {
                 }
                 
             }
+        },
+        computeScrollBar(){
+            var main = document.getElementsByClassName('scanMain');
+            var box = document.getElementsByClassName('boxView');
+
+            var mainHeight = parseInt(main[0].clientHeight);
+            var boxHeight = parseInt(box[0].scrollHeight);
+            var height =  (mainHeight/boxHeight)*mainHeight; 
+
+            if(height < mainHeight){
+                this.showSideScroll = 'block';
+                this.srcollBarHeight = height;
+            }else{
+                this.showSideScroll = 'none';
+            } 
         }
     }
 }
@@ -664,7 +652,8 @@ export default {
 }
 
 .scanMain {
-    overflow-y: auto;
+    //overflow-y: auto;
+    position: relative;
     padding: 5px !important;
 }
 
@@ -690,4 +679,5 @@ export default {
     }
 
 }
+
 </style>

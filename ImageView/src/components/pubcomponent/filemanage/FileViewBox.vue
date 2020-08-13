@@ -4,7 +4,7 @@
         <div class="fileListBox">
             <div class="fileListBoxContentTitle" >
                 <span ><el-tag type="danger" size="small">附件管理和电子发票...</el-tag></span>
-                <button class="delFileBtn" type="button" v-on:click="delFile">
+                <button class="delFileBtn" type="button" v-on:click="delFileOrTicket">
                     <i class="el-icon-delete"></i>
                 </button>
             </div>
@@ -24,11 +24,11 @@
             <div class="fileTicketListContent" v-bind:style="slideContentBox">
 
 				<div class="fileListContent">
-                    <filelistview @viewPdfDoc="viewPdfDoc" ></filelistview>
+                    <filelistview @viewPdfDoc="viewPdfDoc" @pickFile="pickFileOrTicket" ></filelistview>
                 </div>
 
                 <div class="ticketListBoxContent">
-                    <ticketlistview @viewPdfDoc="viewPdfDoc" ></ticketlistview>
+                    <ticketlistview @viewPdfDoc="viewPdfDoc" @pickTicket="pickFileOrTicket" ></ticketlistview>
                 </div>
 
             </div>
@@ -46,7 +46,7 @@ import util from '../../../utils/util.js'
 import par from '../../../utils/param.js'
 import fileListView from './FileListView'
 import ticketListView from './TicketListView'
-import PdfDocView from '../pdfdocdialog/PdfDocBox'
+import pdfDocView from '../pdfdocdialog/PdfDocBox'
 
 export default {
     data : function(){
@@ -60,7 +60,7 @@ export default {
         }
     },
     components : {
-        'pdfdocview' : PdfDocView,
+        'pdfdocview' : pdfDocView,
         'filelistview' : fileListView,
         'ticketlistview' : ticketListView,
     },
@@ -71,17 +71,38 @@ export default {
         }
     },
     methods : {
-        delFile : function(){
+        delFileOrTicket : function(){
             if(this.filePicked.length <= 0){
-                util.showModelTip('warning','请先选择要删除的附件!');
+                util.showModelTip('warning','请先选择要删除的文件!');
                 return false;
             }
-            let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.filePicked};
-            util.deleteRequest('/imageUploadServices',parm,(res)=>{
-                window.console.log(res);
-            })
+            if(this.type == 'F'){
+                let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.filePicked};
+                util.deleteRequest('/imageUploadServices',{body:parm},(res)=>{
+                    
+                    if(res.body.status == "200"){
+                        util.showModelTip('success','删除成功!');
+                        util.reloadDataByDelete(this.filePicked,'F');
+                    }else{
+                        util.showModelTip('success','删除失败!');
+                        return false;
+                    }
+                })
+            }else if(this.type == 'T'){
+                /* let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.filePicked};
+                util.deleteRequest('/imageUploadServices',{body:parm},(res)=>{
+                    
+                    if(res.body.status == "200"){
+                        util.showModelTip('success','删除成功!');
+                        util.reloadDataByDelete(this.filePicked,'F');
+                    }else{
+                        util.showModelTip('success','删除失败!');
+                        return false;
+                    }
+                }) */
+            }
         },
-        pickFile (id){
+        pickFileOrTicket (id){
             if(this.filePicked.length <= 0){
                 this.filePicked.push(id);
             }else{
@@ -241,35 +262,7 @@ export default {
         flex : 1;
         width: 100%;
         height: 100%;
-        .ticketListUl{
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-
-            li{
-                display: block;
-                widows: 100%;
-                height: 55px;
-                padding: 5px 10px;
-                cursor: pointer;
-                overflow: auto;
-                font-size: 9pt;
-                border-bottom: 1px solid rgb(228, 228, 228);
-                > * {
-                    float: left;
-                }
-                img{
-                    width: auto;
-                    height: 40px;
-                }
-                p{
-                    margin: 10px 5px 5px;
-                    display: block;
-                    width: 185px;
-                }
-            }
-            
-        }
+        
     }
 
 }

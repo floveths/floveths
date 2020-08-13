@@ -30,11 +30,11 @@
 
             <div class="bottomBar">
                 <div class="barBox" v-if="barType==1">
-                    <i class="el-icon-refresh-left" v-on:click="bigImage(3)"></i>
-                    <i class="el-icon-plus" v-on:click="bigImage(1)"></i>
-                    <i v-on:click="bigImage(0)"><span>1:1</span></i>
-                    <i class="el-icon-minus" v-on:click="bigImage(2)"></i>
-                    <i class="el-icon-refresh-right" v-on:click="bigImage(4)"></i>
+                    <i class="el-icon-refresh-left" v-on:click="oprateBigImage(3)"></i>
+                    <i class="el-icon-plus" v-on:click="oprateBigImage(1)"></i>
+                    <i v-on:click="oprateBigImage(0)"><span>1:1</span></i>
+                    <i class="el-icon-minus" v-on:click="oprateBigImage(2)"></i>
+                    <i class="el-icon-refresh-right" v-on:click="oprateBigImage(4)"></i>
                 </div>
 
                 <div class="cutSamllImg" v-if="barType==2">
@@ -106,14 +106,13 @@ export default {
 
         util.moveImage('contentImgBox','ImageBox');
         this.bigImgStyle = util.scrollImage('ImageBox');
-        
     },
     methods : {
         closeModel (){
             this.$emit('closeModel');
         },
-        bigImage : function(id){
-           var style = util.bigImage(id);
+        oprateBigImage : function(id){
+           var style = util.oprateBigImage(id);
            this.bigImgStyle = style;
         },
         slideImgLeft : function(){
@@ -165,7 +164,7 @@ export default {
                 pId = pId.split('-');
                 cId = cId.split('-');
                 let type = par.imgViewArr[curIndex].type;
-                if(type == 'i'){
+                if(type == 'i' || type == 'u'){
                     this.imgUrl = par.imgData[pId[1]].children[cId[1]].imageSrc;
                 }else if(type == 's'){
                     let fileId = par.imgData[pId[1]].children[cId[1]].fielId;

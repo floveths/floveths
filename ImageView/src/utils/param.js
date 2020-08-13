@@ -36,7 +36,7 @@ let par = {
     curImgIndex : 0,//每张图片下标
     imgViewArr : [],//存储所有图片数组 查看大图时使用
     postImgArr : [],//提交树
-    serverIp : '127.0.0.1',
+    serverIp : '47.92.211.214',
     serverPort : '8080',
     socketPort : '28388',
     ocrPort : '0',
@@ -71,12 +71,6 @@ let par = {
             }
         },
         callback: {
-            onClick : function(event, treeid, treenode){
-                if(treenode.level==1||treenode.level=='1'){
-                    par.nodeId = treenode.id;//存储当前选择的单据分类;
-                    par.nodeName = treenode.name;
-                }
-            }
         }
     },
     ticketNodes : [
@@ -106,9 +100,9 @@ let par = {
         { label:"10",value:"10月"}, 
         { label:"11",value:"11月"}, 
         { label:"12",value:"12月"}
-     ],
+    ]
 
-
+/* 
     flag : 0,//标识
     
     isValide : true,//验证
@@ -158,7 +152,7 @@ let par = {
     batchPostImg : [],//批扫存放图片
     fileIdArr : [],//存放图片fileID
     upText : '正在上传...',
-    gressValue : '0%'//初始化默认值
+    gressValue : '0%'//初始化默认值 */
 
 }
 
