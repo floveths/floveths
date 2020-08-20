@@ -118,7 +118,7 @@ export default {
         },
         viewPdfDoc : function(id){
             
-            this.pdfUrl = 'http://'+par.baseUrl+'/webShowImage/getDocument/'.concat(id);
+            this.pdfUrl = par.baseUrl+'/webShowImage/getDocument/'.concat(id);
             this.showPdfBox = true;
         },
         sliceBox:function(par){

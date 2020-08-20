@@ -1,19 +1,17 @@
 <template>
-    <div>
-        <div class="rotateImg">
-            <div class="rotateImgBack">
-                <div class="progress yellow">
-                    <h3 class="progress-title">正在矫正</h3>
-                    <div class="progress-bar" v-bind:style="{width:rotatevalue+'%'}">
-                    <div class="progress-value">{{rotatevalue}}%</div>
-                </div>
-                </div>
-                <div class="btn btn-block closeBlock" v-show="isfull">
-                    <input type="button" class="closeBtn" v-on:click="closeRotate" value="关闭" >
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="rotateImg">
+		<div class="rotateImgBack">
+			<div class="progress yellow">
+				<h3 class="progress-title">正在矫正</h3>
+				<div class="progress-bar" v-bind:style="{width:rotatevalue+'%'}">
+				<div class="progress-value">{{rotatevalue}}%</div>
+			</div>
+			</div>
+			<div class="btn btn-block closeBlock" @click="closeRotate" v-show="isfull">
+				<input type="button" class="closeBtn"  value="关闭" >
+			</div>
+		</div>
+	</div>
 </template>
 
 <script>

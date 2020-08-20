@@ -22,7 +22,7 @@ let par = {
         ]
     }]*/
 
-    baseUrl : '47.92.211.214:8080',//'192.168.0.40:8080',
+    baseUrl : 'http://47.92.211.214:8080',//'192.168.0.40:8080',
     imgData : [],//单扫多扫都存放在这
     batchId : [],//批次号单扫批扫都存放
     imgScale : 1,//默认值
@@ -32,7 +32,7 @@ let par = {
     curHeight : 0,//图片原始高度
     rotatez : 0,//旋转
     nodeId : null,//树节点选择的业务类型 例如 飞机票
-    nodeName : '其它',
+    nodeName : '其它',//默认为其它
     curImgIndex : 0,//每张图片下标
     imgViewArr : [],//存储所有图片数组 查看大图时使用
     postImgArr : [],//提交树
@@ -40,7 +40,7 @@ let par = {
     serverPort : '8080',
     socketPort : '28388',
     ocrPort : '0',
-    scanType : 1,//扫描类型 1单扫 2批扫
+    scanType : 2,//扫描类型 1单扫 2批扫
     pickImage : [],//选中图片
     uploadFileArr : [],//要上传的附件
     uploadImageArr : [],//要上传的影像
@@ -82,7 +82,7 @@ let par = {
     ],
     fileNodes : [
         {
-            name: "附件列表...",
+            name: "附件列表(Word,Excel,Zip)...",
             open:true,
             children : []
         }

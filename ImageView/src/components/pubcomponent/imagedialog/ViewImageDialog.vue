@@ -183,13 +183,13 @@ export default {
 
     }
     .bottomBar{
-        height: 36px;
+        height: 30px;
         margin: 10px auto;
         border-radius: 10px;
         position: relative;
 
         .barBox{
-            width: 200px;
+            width: 175px;
             height: 100%;
             background:white;
             margin: auto;
@@ -201,12 +201,12 @@ export default {
             cursor: pointer;
             color: #534c4c;
             font-size: 12pt;
-            width: 30px;
-            height: 30px;
+            width: 25px;
+            height: 25px;
             display: inline-block;
             border-radius: 50%;
             text-align: center;
-            line-height: 28px;
+            line-height: 22px;
             margin: 2px 5px;
             border: 2px solid #757373;
             box-shadow: 2px 2px 4px #ccc inset;

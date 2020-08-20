@@ -20,7 +20,7 @@
                             </el-select> 
                         </li>
                         <li>
-                            <el-tag style="height:28.5px;" effect="dark" type="success" >共 &nbsp;{{$store.state.imgTotalCount}} &nbsp; 张影像</el-tag>
+                            <el-tag style="height:26px;line-height: 26px;" effect="dark" type="success" >共 &nbsp;{{$store.state.imgTotalCount}} &nbsp; 张影像</el-tag>
                         </li>
                         <li>
                             <el-button type="primary" @click="scanBtn" size="mini"><i class="el-icon-printer"></i> {{$t('l.scan')}}</el-button>
@@ -32,11 +32,11 @@
                     <ul>
                         <li>
                             <input type="file" id="importFile" multiple="multiple" ref="inputFile" @change="reSizePic" style="display: none;" />
-                            <el-button type="primary" @click="importBtn" size="mini"><i class="el-icon-download"></i>&nbsp;本地导入</el-button>
+                            <el-button type="primary" @click="importBtn" size="mini" v-if="scanType==1" ><i class="el-icon-download"></i>&nbsp;本地导入</el-button>
                         </li>
                         <li>
                             <div class="smallcode" v-show="showSmallCode" ><img src="../../../public/static/logo.png" /></div>
-                            <el-button type="primary" @mouseenter.native="showSmallCode=true" @click="viewAppFolderOrPool" @mouseleave.native="showSmallCode=false" size="mini">
+                            <el-button type="primary" v-if="scanType==1" @mouseenter.native="showSmallCode=true" @click="viewAppFolderOrPool" @mouseleave.native="showSmallCode=false" size="mini">
                                <i class="el-icon-picture"></i> 我的影像</el-button>
                         </li>
                         
@@ -69,7 +69,7 @@
                                     <li class="barLi" v-if="showCorrectImg">
                                         <el-button type="info" @click="revertImage" size="mini"><i class="el-icon-refresh"></i>&nbsp;影像矫正</el-button>
                                     </li>
-                                    <li class="barLi" v-if="showFileUpBar">
+                                    <li class="barLi" v-if="showFileUpBar || scanType==1">
                                         <el-button type="success" @click="$store.commit('showFileUpload')" size="mini"><i class="el-icon-message"></i>&nbsp;附件上传</el-button>
                                     </li>
                                     <li class="barLi">
@@ -88,10 +88,9 @@
 
             </el-header>
             <el-container>
-                <el-aside v-bind:style="leftAsideWidth" class="scanAside"> 
+                <el-aside v-bind:style="leftAsideWidth"  class="scanAside"> 
                     
                     <div class="asideLeftContent">
-
                         <div class="content">
                             <scantree :showfilelistBar="showFileListBar"></scantree>
                         </div>
@@ -108,18 +107,19 @@
                     <scrollbar :bar="'bar'" :sideScroll="showSideScroll" :height="srcollBarHeight" ></scrollbar>
                 </el-main>
 
-                <el-aside v-bind:style="rightAsideWidth" class="scanAside">
+                <el-aside v-bind:style="rightAsideWidth" v-if="scanType==1" class="scanAside">
                     <div class="asideRightContent">
                         <div class="contentBar" @click="showAside('right')">
                             <i class="el-icon-arrow-left"></i>
                         </div>
                         <div class="content">
 
-                            <filelistview ></filelistview>
+                            <fileviewbox ></fileviewbox>
 
                         </div>
                     </div>
                 </el-aside>
+
             </el-container>
         </el-container>
 
@@ -140,7 +140,7 @@
         </transition>
        
         <transition name="up">
-            <correctimagebar v-show="showRotateProgressBar" :closemodel="showRotateProgressBar = false" :isfull="isFullCorrect" :rotatevalue="rotateValue"></correctimagebar>
+            <correctimagebar v-show="showCorrectProgressBar" @closemodel="showCorrectProgressBar = false" :isfull="isFullCorrect" :rotatevalue="rotateValue"></correctimagebar>
         </transition>
         
         <transition name="up">        
@@ -169,7 +169,7 @@ import scrollBar from '../pubcomponent/scrollbarcomp/ScrollBarTemp'
 import correctImageBar from '../pubcomponent/imagebox/CorrectImageBar'
 import imageDialog from '../pubcomponent/imagedialog/ImageModelDialog'
 import initStateProgress from '../pubcomponent/imagebox/InitStateProgress'
-import fileListView from '../../components/pubcomponent/filemanage/FileViewBox'
+import fileViewBox from '../../components/pubcomponent/filemanage/FileViewBox'
 import fileUpload from '../../components/pubcomponent/fileupload/FileUploadTemp'
 import imageComponent from '../../components/pubcomponent/imagebox/ImageComponent'
 import smallAppFolder from '../../components/pubcomponent/smallappfolder/AppFolder'
@@ -191,8 +191,6 @@ export default {
             'lang' : '',
             'showBar' : false,
             'moveBar' : '',
-            'scanType': 0,
-            'imgData' : par.imgData,
             'ticketId' : '',
             'isSave' : 0,//初始化未上传
             'pageOp' : '',
@@ -201,11 +199,14 @@ export default {
             'appListData' : [],
             'isFullCorrect' : false,
             'rotateValue' : 1,
+            'isUpload' : false,
             'bigImgUrl' : null,
             'deviceValue' : '',
             'dialogBarType' : 0,
             'showPdfBox' : false,
             'isShowBigImg' : false,
+            'imgData' : par.imgData,
+            'scanType': par.scanType,
             'showCorrectDialog' : false,
             'showInitImgProgress' : false,
             'deviceOptions' : par.deviceOptions,
@@ -215,7 +216,7 @@ export default {
             'rightAsideWidth' : {"width":'30px'},
             'showLeftContent' : false,
             'showRightContent' : false,
-            'showRotateProgressBar' : false
+            'showCorrectProgressBar' : false
         }
     },
     components : {
@@ -223,7 +224,7 @@ export default {
         'scrollbar' : scrollBar,
         'fileupload' : fileUpload,
         'imagedialog' : imageDialog,
-        'filelistview' : fileListView,
+        'fileviewbox' : fileViewBox,
         'smallapppool' : smallApppool,
         'smallappfolder' : smallAppFolder,
         'correctimagebar' : correctImageBar,
@@ -241,8 +242,8 @@ export default {
 
     },
     mounted(){
-        util.getRequest('/imageUploadServices/0001A91000000000YINI',(res)=>{
-
+        /* util.getRequest('/imageUploadServices/0001A91000000000YINI',(res)=>{
+            
             if(res.body.status=="200"||res.body.status==200){
                 par.batchId.push(res.body.data.batchId);
                 par.businessSerialNo = res.body.data.businessSerialNo;
@@ -263,13 +264,16 @@ export default {
                 })
             }
             
-        });
+        }); */
+
         util.initWS();
+        util.vue = this;
         util.initTreeNode();
         window.setTimeout(()=>{
+
             this.computeScrollBar();
             util.scrollView(document.getElementsByClassName('scanMain')[0],document.getElementById('boxView'),'bar');
-        },2000)
+        },2000);
     },
     methods:{
         changeLang (lang){
@@ -305,7 +309,8 @@ export default {
             
 			var obj = {"InterFace": "Scan","DeviceName": this.deviceValue,'ControlEncryption' : 0,'DoubleSide': parseInt(this.pageOp),'DPI': 300,'ShowUI': 0,'ShowProcess': 0,'Rote': 360,'Color': 3,'Ocr': parseInt(par.ocrPort),'Ip': par.serverIp.toString(),'Port': parseInt(par.serverPort),'SocketPort': parseInt(par.socketPort),'Type': parseInt(1)};
             this.isSave = 0;//重新初始化未保存
-            util.sendInfo(JSON.stringify(obj));
+            window.console.log(this);
+            util.sendInfo(JSON.stringify(obj),this.computeScrollBar());
         },
         importBtn(){
             document.getElementById('importFile').click();
@@ -341,17 +346,21 @@ export default {
 
             let parm = {"businessSerialNo": par.businessSerialNo,"fileId":delArr};
             util.deleteRequest("/imageUploadServices",{body:parm},(res)=>{
-                let arr = par.imgData;
-                if(res.body.status == '200'||res.body.status == 200){
 
-                    util.reloadDataByDelete(arr,"I");
+                if(res.body.status == "200"||res.body.status == 200){
+                    par.pickImage = [];//清空数组
+                    util.reloadDataByDelete(delArr,'I');
+                    util.showModelTip('success','删除成功!');
+                }else{
+                    util.showModelTip('success','删除失败!');
+                    return false;
                 }
+
             });  
             let arr = document.getElementsByClassName('img-thumbnails');
             for(let o=0;o<arr.length;o++){
-                arr[o].style.border = '1px solid #ddd';
+                arr[o].style.border = '1px solid #ececec';
             }
-            //par.pickImage = [];//清空数组
         },
         revertImage(){
 
@@ -364,15 +373,26 @@ export default {
                 return false;
             }
 
-            let imgSrc = null;
-            par.uploadImageArr.find((k)=>{
-                if(k.fielId == delArr[0]){
-                    imgSrc = k.imageSrc;
-                } 
-            });
+            for(let k = 0;k < par.imgData.length;k++){
+                for(let s = 0;s < par.imgData[k].children;s++){
+                    if(par.imgData[k].children[s].fielId == delArr[0]){
+                        this.isUpload = s.isUpload;
+                        if(this.isUpload){
+                            this.bigImgUrl = s.imageSrc;
+                        }else{
+                            
+                            window.setTimeout(() => {
+                                util.showBigImgFromActive(null,(res)=>{
+                                    this.bigImgUrl = res;
+                                });
+                            }, 1500);
+                        }
+                        break;
+                    }
+                }
+            }
 
             this.ticketId = delArr[0];
-            this.bigImgUrl = imgSrc;
             this.showCorrectDialog = true;
         },
         showBigImage(msg){
@@ -397,23 +417,17 @@ export default {
 			this.isShowBigImg = true;
         },
         correctImageModel(){
-            this.showCorrectDialog = false;
             
             par.pickImage = [];
             let fileId = this.ticketId;
 
-            let isUpload;
-            par.imgTotalArr.find((k)=>{
-                if(k.imgFielId == fileId){
-                    isUpload = k.isUpload
-                    return;
-                }
-            });
-
-            let interVal = null;
-            this.showRotateProgressBar = true;
-
             let count = 10;
+            let isUpload = this.isUpload;
+            let interVal = null;
+
+            this.showCorrectDialog = false;
+            this.showCorrectProgressBar = true;
+            
             interVal = window.setInterval(()=>{
 
                 let m = Math.random().toFixed(0,2)
@@ -439,7 +453,6 @@ export default {
                 })
             }
             //this.showRotateModel();
-            this.showRotateProgressBar = false;
         },
         saveImage(){
 
@@ -529,15 +542,14 @@ export default {
     display: flex;
     padding: 0px 65px;
     background: #485159;
-    height: 50px !important;
+    height: 40px !important;
     justify-content: space-between;
     box-shadow: 0 1px 4px 0 rgba(0,21,41,.08);
 
     .headLeft,.headRight{
-        margin: 5px 0px;
+        margin: 2px 0px;
         box-sizing: border-box;
         ul{
-            overflow: hidden;
             list-style: none;
             display: inline-flex;
             li{
@@ -584,8 +596,8 @@ export default {
         border-right: 10px solid transparent;
     }
     .headRight .menuBar{
-        width: 30px;
-        height: 30px;
+        width: 25px;
+        height: 25px;
         border-radius: 50%;
         cursor: pointer;
         position: relative;
@@ -594,7 +606,7 @@ export default {
     }
     .menuBar::after{
         content: '';
-        margin-top: 5px;
+        margin-top: 2px;
         margin-left: -3px;
         border-radius: 2px;
         border-top: 10px solid transparent;
@@ -618,7 +630,7 @@ export default {
     .ullist{
         list-style: none;
         width: auto;
-        height: 30px;
+        height: 28px;
         top: 0;
         position: absolute;
         margin-left: 16px;
@@ -627,7 +639,6 @@ export default {
         overflow: hidden;
         background: #485159;
         justify-content: center;
-        border: 1px solid #5e5e5e;
         box-shadow: 0px 3px 5px #2a3e51;
 
         > ul li{
@@ -640,15 +651,23 @@ export default {
     }
 
 }
-  
+
+.el-input--mini{
+    height: 26px !important;
+    line-height: 26px !important;
+}
+
+.el-button--mini{
+    padding: 5px 15px;
+}
 /* .scanAside{
     box-shadow: 0px 5px 8px #ccc;
 } */
 
 .scanAside,.scanMain {
     overflow: hidden;
-    margin-top: 50px;
-    height: calc(100vh - 50px);
+    margin-top: 40px;
+    height: calc(100vh - 40px);
 }
 
 .scanMain {
@@ -663,7 +682,7 @@ export default {
     justify-content: space-between;
 
     .content{
-        height: calc(100vh - 50px);
+        height: calc(100vh - 40px);
         width: 330px;   
         background: rgb(255, 255, 255);
         position: relative;

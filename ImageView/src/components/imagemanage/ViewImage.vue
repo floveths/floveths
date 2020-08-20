@@ -273,7 +273,7 @@ export default {
             liImg.style.transform = style.transform;
         },
         downLoadImg(){
-            let url = `http://${par.baseUrl}/webShowImage/downloadImages/${par.businessSerialNo}`;
+            let url = `${par.baseUrl}/webShowImage/downloadImages/${par.businessSerialNo}`;
             window.location.href = url;
         },
         slideImgLeft(){
@@ -366,7 +366,7 @@ export default {
             }
 
             window.localStorage.setItem("img-fileId", this.pickImgArr);
-            window.open('http://'+par.baseUrl + "/images/printImage.html");
+            window.open(par.baseUrl + "/images/printImage.html");
 
         },
         viewByIndex(index){
@@ -454,7 +454,7 @@ export default {
         },
         viewPdfDoc(id){
 
-            this.pdfUrl = 'http://'+par.baseUrl+'/webShowImage/getDocument/'.concat(id);
+            this.pdfUrl = par.baseUrl+'/webShowImage/getDocument/'.concat(id);
             this.showPdfBox = true;
         },
         loadData(){
@@ -566,8 +566,9 @@ body{
 }
 
 .navbar-top{
-	color: white;
-    min-height: 45px !important;
+    color: white;
+    height: 40px;
+    min-height: 40px !important;
 	box-shadow: 0px 2px 12px #f4efff;
     background: #485159;
 }
@@ -614,9 +615,13 @@ body{
     background: #5e6a74 !important;
 }
 
+.el-button--mini{
+    padding: 5px 15px;
+}
+
 .viewContent{
     width: 100%;
-    height: calc(100vh - 255px);
+    height: calc(100vh - 245px);
     position: relative;
     margin: 10px auto;
     display: block;

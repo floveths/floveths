@@ -30,7 +30,6 @@ export default {
                 let arr = this.fileList.filter((i)=>{
                     return i.fileIcon = util.getFileTypeByName(i.fileName);
                 });
-                window.console.log(11)
                 this.fileListData = arr;
             }
         }

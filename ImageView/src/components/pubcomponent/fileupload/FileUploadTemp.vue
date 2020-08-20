@@ -5,7 +5,7 @@
 
             <div class="photoBox">
                 <div class="row">
-                    <div class="col-md-3 col-xs-3 col-sm-3" v-for="(data,i) in fileListData" :key="i">
+                    <div class="col-md-3 col-xs-3 col-gat col-sm-3" v-for="(data,i) in fileListData" :key="i">
                         <div class="fileContentBox" >
                             <div class="imgSucTip imgTip"></div>
 							<img :src="data.fileIcon" class="fileImg">
@@ -15,7 +15,7 @@
 						</div>
                     </div> 
                     
-                    <div class="col-md-3 col-xs-3 col-sm-3">
+                    <div class="col-md-3 col-xs-3 col-gat col-sm-3">
                         <div class="addPic" style="box-shadow: 0px 0px;border: 1px dashed #7de9f6;">
                             <input type="file" accept="application/msexcel,application/msword,application/pdf" multiple="multiple" id="openFile" @change="getAllFile"  ref="getFile" class="openFile"/>
                             <span class="el-icon-plus addPicImg" v-on:click="openFile"></span>
@@ -71,8 +71,15 @@ export default {
                 return false;
             }
             let parm = {"businessSerialNo": par.businessSerialNo,"fileId":this.pickFile};
-            util.deleteRequest('/imageUploadServices',parm,(res)=>{
-                window.console.log(res);
+            util.deleteRequest('/imageUploadServices',{body:parm},(res)=>{
+                
+                if(res.body.status=='200'||res.body.status==200){
+                    util.showModelTip('warning','删除成功!');
+                    util.reloadDataByDelete(this.pickFile,"F");
+                }else{
+                    util.showModelTip('warning','删除失败!');
+                    return false;
+                }
             })
         },
         getAllFile : function(){
@@ -91,7 +98,7 @@ export default {
         viewPdfDoc : function(e){
             
             let val = e.target.value;
-            this.pdfUrl = 'http://'+par.baseUrl+val;
+            this.pdfUrl = par.baseUrl+val;
             this.showPdfBox = true;
         }
     }
@@ -103,6 +110,10 @@ export default {
 *{
     margin: 0px;
     padding: 0px;
+}
+
+.col-gat{
+    margin: 8px 0px;
 }
 
 .fileUpBox{

@@ -9,9 +9,9 @@
 								<span>{{pdata.typeName}} 共 {{pdata.typeNum}} 张影像</span>
 							</div>
 							
-							<div class="panel-body" :title="pdata.id">
+							<div class="panel-body" v-if="scanType==1" :title="pdata.id">
 								<vuedragable v-model="pdata.children" group="people" v-bind="dragOptions" @start="dragStart($event,index)" @end="dragEnd" class="row">
-									<div class=" col-md-3 col-ml-4 col-sm-3 col-xs-6 dragItem" 
+									<div class=" col-md-3 col-sm-3 col-xs-6 dragItem" 
 										v-for="(data,s) in pdata.children"
 										:data-fileid="data.fielId"
 										:data-name="data.name"
@@ -24,13 +24,27 @@
 											<div v-show="data.imgTip!=''" :class="data.imgTip"></div>
 											<div class="img " :class="data.cutImgCls" @click="showCutImg"></div>
 											<img v-bind:src="data.imageSrc" @dblclick="showBigImg" @click="chooseThumbImg" v-bind:name="data.fielId" :data-id="'p-'+index" v-bind:id="'c-'+s"  class="img " >	
-											<input type="checkbox" v-model="picked" :id="data.fielId" :value="data.fielId" class="checkdiv" @change="hasChecked"/>
+											<input type="checkbox" v-model="picked" @change="getFileId" :id="data.fielId" :value="data.fielId" class="checkdiv"/>
 											<label class="checkLabel" :for="data.fielId"></label>
-											<input type="text" :value="data.imgName" class="reImgName" v-bind:name="data.fielId" v-on:blur="fileReName"/>
+											<input type="text" :value="data.imgName" class="reImgName" v-bind:name="data.fielId" />
 										</div>
 
 									</div>
 								</vuedragable>
+							</div>
+							<div class="panel-body row" v-if="scanType==2" >
+								<div class=" col-md-3 col-sm-3 col-xs-6"  v-for="(data,s) in pdata.children" v-bind:key="s">
+									
+									<div class="img-thumbnails" @mouseover="showErrorInfo" @mouseout="unShowErrorInfo">
+										<div v-show="data.imgTip!=''" :class="data.imgTip"></div>
+										<!-- <div class="img " :class="data.cutImgCls" @click="showCutImg"></div> -->
+										<img v-bind:src="data.imageSrc" @dblclick="showBigImg" @click="chooseThumbImg" v-bind:name="data.fielId" :data-id="'p-'+index" v-bind:id="'c-'+s"  class="img " >	
+										<input type="checkbox" v-model="picked" @change="getFileId" :id="data.fielId" :value="data.fielId" class="checkdiv"/>
+										<label class="checkLabel" :for="data.fielId"></label>
+										<input type="text" :value="data.imgName" class="reImgName" v-bind:name="data.fielId" />
+									</div>
+
+								</div>
 							</div>
 						</div>
 
@@ -41,7 +55,7 @@
 
 							<div class="panel-body" >
 								<vuedragable v-model="attchListData" group="people" v-bind="dragOptions" @start="dragFiles" class="row">
-									<div class=" col-md-3 col-ml-4 col-sm-3 col-xs-6 dragItem" v-for="(data,index) in attchListData"  :key="index">
+									<div class=" col-md-3 col-sm-3 col-xs-6 dragItem" v-for="(data,index) in attchListData"  :key="index">
 										<div class="img-thumbnails" style="height:130px !important" :itemid="data.fileId">
 											<img v-bind:src="data.fileIcon" @dblclick="viewPdfDoc" v-bind:name="data.fileId"  >	
 											<input type="text" :value="data.fileName" class="reImgName" readonly="readonly" />
@@ -55,7 +69,7 @@
 				</div>
             </div>
 
-			<div class="trashBox" @drop="dragToDelete" @dragover.prevent>
+			<div class="trashBox" v-if="scanType==1" @drop="dragToDelete" @dragover.prevent>
 				<p class="trashIcon"><i class="el-icon-delete"></i></p>
 			</div>
 
@@ -89,7 +103,6 @@ export default {
 			'imgTip' : '',
 			'tipX' : 0,
 			'tipY' : 0,
-			'picked' : [],
 			'dragType' : '',
 			'dragDelete' : [],
 			'isDrag': false,
@@ -97,6 +110,8 @@ export default {
 			'showErrorTip' : false,
 			'errorTipValue' : null,
 			'showPdfBox' : false,
+			'picked' : par.pickImage,
+			'scanType' : par.scanType,
 			'isKeyControlDown' : false,
 			'attchListData' : par.fileListData
 		};
@@ -117,14 +132,38 @@ export default {
 		}
 	},
 	mounted (){
+		function clearBorder(){
+			
+			par.pickImage = [];
+			let arr = document.getElementsByClassName('img-thumbnails');
+			for(let o=0;o<arr.length;o++){
+				arr[o].style.border = '1px solid #ececec';
+			}
+		}
+
 		window.addEventListener('keydown',(e)=>{
 			
 			if(e.ctrlKey&&e.keyCode==17){
                 return this.isKeyControlDown = true;
             }else if(e.keyCode == 46){
-
-				let parm = {"businessSerialNo": par.businessSerialNo,"fileId":par.pickImage};
-				util.deleteRequest("/imageUploadServices",{body:parm});  
+				let arr = par.pickImage;
+				if(arr.length <= 0){
+					util.showModelTip('warning','请先选择要删除的影像!');
+					return false;
+				}
+				let parm = {"businessSerialNo": par.businessSerialNo,"fileId":arr};
+				util.deleteRequest("/imageUploadServices",{body:parm},(res)=>{
+						
+					if(res.body.status == "200"){
+						clearBorder();
+						par.pickImage = this.picked = [];
+						util.reloadDataByDelete(arr,'I');
+						util.showModelTip('success','删除成功!');
+					}else{
+						util.showModelTip('success','删除失败!');
+						return false;
+					}
+				});  
 			}
         });
 
@@ -136,12 +175,7 @@ export default {
 		
 		document.addEventListener('click',(e)=>{
 			if(e.altKey){
-				this.picked = [];
-				par.pickImage = [];
-				let arr = document.getElementsByClassName('img-thumbnails');
-				for(let o=0;o<arr.length;o++){
-					arr[o].style.border = '1px solid #ddd';
-				}
+				clearBorder();	
 			}
 		});
 
@@ -195,20 +229,38 @@ export default {
 			let msg = {'url':e.target.nextSibling.src,'fileId':e.target.nextSibling.name,'barType':2};
 			this.$emit('showBigImg',msg);
 		},
-		hasChecked(){
-			par.pickImage = this.picked
-		},
 		fileReName(e){
 			
 			util.fileReName(e.target.name,e.target.value);
 		},
-		chooseThumbImg:function(e){
+		chooseThumbImg(e){
 
 			if(e.ctrlKey){
-				this.picked.push(e.target.name);
-				e.target.parentElement.style.border = '3px solid #ffaf17';
+				if(!e.target.nextSibling.checked){
+					e.target.parentElement.style.border = '1px solid #64b0ff';
+				}else{
+					e.target.parentElement.style.border = '1px solid #ececec';
+				}
+
+				if(this.picked.length <= 0){
+					this.picked.push(e.target.name);
+				}else{
+					let flag = false;
+					let arr = this.picked;
+					for(let k=0;k<arr.length;k++){
+						if(arr[k] == e.target.name){
+							flag = true;
+							this.picked.splice(k,1);
+							break;
+						}
+					}
+					if(!flag){
+						this.picked.push(e.target.name);
+					}
+					par.pickImage = this.picked;
+				}
 			}
-			par.pickImage = this.picked;
+			
 		},
 		dragFiles(e){
 			let id =e.item.childNodes[0].attributes.itemid.value;
@@ -248,7 +300,7 @@ export default {
 		},
 		viewPdfDoc(e){
 			let id = e.target.name;
-            let val = 'http://'+par.baseUrl+'/webShowImage/getDocument/'.concat(id);
+            let val = par.baseUrl+'/webShowImage/getDocument/'.concat(id);
             this.pdfUrl = val;
             this.showPdfBox = true;
 		},
@@ -322,6 +374,9 @@ export default {
 		unShowErrorInfo(){
 			this.errorTipValue = null;
 			this.showErrorTip = false;
+		},
+		getFileId(){
+			par.pickImage = this.picked;
 		}
 	}
     
@@ -338,14 +393,6 @@ export default {
 
 .up-enter-active,.up-leave-active{
 	transition: opacity 0.5s linear;
-}
-
-@media screen (min-width: 1024px){
-	.col-ml-4{
-		background: red;
-		flex: 0 0 33%;
-		max-width: 33%;
-	}
 }
 
 .boxView{
@@ -442,6 +489,7 @@ export default {
 	height: 165px !important;
 	width: 100% !important;
 	background: #f9f9f9;
+	border : 1px solid #ececec;
 	box-shadow: 0px 4px 12px #d1d1d1;
 
 	> img{
@@ -514,6 +562,7 @@ export default {
 	height: 50px;
 	background: red;
 	z-index: 10;
+	position: absolute;
 	transform: skewY(-45deg);
 	margin-left: -22px;
 }
@@ -532,6 +581,7 @@ export default {
 	height: 35px;
 	background: rgb(84, 233, 79);
 	z-index: 10;
+	position: absolute;
 	transform: skewY(-45deg);
 	margin-left: -5px;
 }
@@ -550,6 +600,7 @@ export default {
 	height: 35px;
 	background: rgb(255, 139, 45);
 	z-index: 10;
+	position: absolute;
 	transform: skewY(-45deg);
 	margin-left: -5px;
 }
@@ -568,6 +619,7 @@ export default {
 	height: 35px;
 	background: rgb(251, 255, 33);
 	z-index: 10;
+	position: absolute;
 	transform: skewY(-45deg);
 	margin-left: -5px;
 }
@@ -586,6 +638,7 @@ export default {
 	height: 35px;
 	background: rgb(63, 140, 255);
 	z-index: 10;
+	position: absolute;
 	transform: skewY(-45deg);
 	margin-left: -5px;
 }
@@ -604,6 +657,7 @@ export default {
 	height: 35px;
 	background: rgb(190, 78, 255);
 	z-index: 10;
+	position: absolute;
 	transform: skewY(-45deg);
 	margin-left: -5px;
 }
@@ -622,6 +676,7 @@ export default {
 	height: 35px;
 	background: rgb(255, 72, 163);
 	z-index: 10;
+	position: absolute;
 	transform: skewY(-45deg);
 	margin-left: -5px;
 }

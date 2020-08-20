@@ -1,51 +1,47 @@
 <template >
-    <div >
+    <div class="imgViewBox">
+        <div class="closeBar"  @click="closeModel">
+            <i class=" el-icon-plus" ></i>
+        </div>
 
-        <div class="imgViewBox">
-            <div class="closeBar"  @click="closeModel">
-                <i class=" el-icon-plus" ></i>
+        <div class="imgContentBox">
+            <div class="imgContentBoxLeft">
+
+                <div class="imgContentLeft" v-show="barType==1">
+                    <i class="el-icon-arrow-left" @click="slideImgLeft"></i>
+                </div>
+                <div class="imgContentCenter">
+                    <div class="contentImgBox" id="contentImgBox">
+                        <img :src="imgUrl" v-bind:style="bigImgStyle" id="ImageBox"> 
+                    </div>
+                </div>
+                <div class="imgContentRight" v-show="barType==1">
+                    <i class="el-icon-arrow-right" @click="slideImgRight"></i>
+                </div>
+
             </div>
 
-            <div class="imgContentBox">
-                <div class="imgContentBoxLeft">
+            <div class="imgContentBoxRight" v-show="showOcrList" >
+                <ocrtemplate :type="1" :items="ocrInfoList" ></ocrtemplate>
+            </div>
+        </div>
 
-                    <div class="imgContentLeft" v-show="barType==1">
-                        <i class="el-icon-arrow-left" @click="slideImgLeft"></i>
-                    </div>
-                    <div class="imgContentCenter">
-                        <div class="contentImgBox" id="contentImgBox">
-                            <img :src="imgUrl" v-bind:style="bigImgStyle" id="ImageBox"> 
-                        </div>
-                    </div>
-                    <div class="imgContentRight" v-show="barType==1">
-                        <i class="el-icon-arrow-right" @click="slideImgRight"></i>
-                    </div>
-
-                </div>
-
-                <div class="imgContentBoxRight" v-show="showOcrList" >
-                    <ocrtemplate :type="1" :items="ocrInfoList" ></ocrtemplate>
-                </div>
+        <div class="bottomBar">
+            <div class="barBox" v-if="barType==1">
+                <i class="el-icon-refresh-left" v-on:click="oprateBigImage(3)"></i>
+                <i class="el-icon-plus" v-on:click="oprateBigImage(1)"></i>
+                <i v-on:click="oprateBigImage(0)"><span>1:1</span></i>
+                <i class="el-icon-minus" v-on:click="oprateBigImage(2)"></i>
+                <i class="el-icon-refresh-right" v-on:click="oprateBigImage(4)"></i>
             </div>
 
-            <div class="bottomBar">
-                <div class="barBox" v-if="barType==1">
-                    <i class="el-icon-refresh-left" v-on:click="oprateBigImage(3)"></i>
-                    <i class="el-icon-plus" v-on:click="oprateBigImage(1)"></i>
-                    <i v-on:click="oprateBigImage(0)"><span>1:1</span></i>
-                    <i class="el-icon-minus" v-on:click="oprateBigImage(2)"></i>
-                    <i class="el-icon-refresh-right" v-on:click="oprateBigImage(4)"></i>
+            <div class="cutSamllImg" v-if="barType==2">
+
+                <div v-for="(item,i) in cutImgList" :key="i">
+                    <img :src="item.imgUrl" :id="item.fileId" @mouseover="getCurImgOcrInfo" />
                 </div>
 
-                <div class="cutSamllImg" v-if="barType==2">
-
-                    <div v-for="(item,i) in cutImgList" :key="i">
-                        <img :src="item.imgUrl" :id="item.fileId" @mouseover="getCurImgOcrInfo" />
-                    </div>
-
-                </div>
             </div>
-
         </div>
     </div>
 </template>
@@ -66,7 +62,6 @@ export default {
             'ocrInfoList' : [],
             'showOcrList' : false,
             'fromAppPool' : false
-            
         };
     },
     components : {
@@ -276,17 +271,18 @@ export default {
             flex: 1;
             height: 90vh;
             padding-top: 45px;
+            overflow-y: scroll;
         }
 
     }
     .bottomBar{
-        height: 36px;
+        height: 30px;
         margin: 10px auto;
         border-radius: 10px;
         position: relative;
 
         .barBox{
-            width: 200px;
+            width: 175px;
             height: 100%;
             background:white;
             margin: auto;
@@ -298,12 +294,12 @@ export default {
             cursor: pointer;
             color: #534c4c;
             font-size: 12pt;
-            width: 30px;
-            height: 30px;
+            width: 25px;
+            height: 25px;
             display: inline-block;
             border-radius: 50%;
             text-align: center;
-            line-height: 28px;
+            line-height: 22px;
             margin: 2px 5px;
             border: 2px solid #757373;
             box-shadow: 2px 2px 4px #ccc inset;

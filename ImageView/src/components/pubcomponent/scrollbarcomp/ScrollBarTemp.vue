@@ -1,8 +1,6 @@
 <template>
-    <div>
-        <div class="scroollBar" :style="{'display':sideScroll}">
-            <div :class="bar" id="bBarSide" :style="{height:height+'px'}"></div>
-        </div>
+    <div class="scroollBar" :style="{'display':sideScroll}">
+        <div :class="bar" id="bBarSide" :style="{height:height+'px'}"></div>
     </div>
 </template>
 <script >

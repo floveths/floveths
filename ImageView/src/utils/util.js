@@ -1,5 +1,6 @@
 import vueObj from 'vue'
 import $ from 'jquery'
+//import jsQR from 'jsqr'
 import Resouce from 'vue-resource'
 import { Message } from 'element-ui';
 import {MessageBox} from 'element-ui'
@@ -11,11 +12,10 @@ import Router from '../router/router'
 
 vueObj.use(Resouce);
 let imgUrl = '';
-let vue = null;
 let ws = new WebSocket("ws://127.0.0.1:11345/Laputa");
 
 const Util = {
-
+    vue : null,
     initWS : function(){
         
         ws.onopen = function() {
@@ -26,8 +26,9 @@ const Util = {
 
         ws.onmessage = function (e) 
         { 
+            window.console.log(e);
             var obj = JSON.parse(e.data);
-            window.console.log(obj);
+          
             if (obj.InterFace == "GetDevice") {
                 Util.buildDeviceDDL(obj);
             } else if (obj.InterFace == "GetFullImage") {
@@ -79,8 +80,9 @@ const Util = {
             } else if (obj.InterFace == "Transmission_LocalToWeb") {
                 
                 Util.buildGrid(obj);
+                Util.vue.computeScrollBar();
             } else if (obj.InterFace == "Transmission_WebToLocal") {
-                vue.computeScrollBar();
+                Util.vue.computeScrollBar();
                 Store.commit('showImgByFileId',obj.FileId);
             } 
         };
@@ -115,32 +117,92 @@ const Util = {
     /*扫描仪画图 */
     buildGrid : function(obj){
 
-        var fileName = '';
-        if(Par.scanType==2){
-            /* Par.nodeId = obj.BusinessSerialNo;
-            Par.nodeName = Par.nodeId+"_"+(vue.numIndex+1)+".jpg"; */
-            /* fileName = Par.nodeId+"_"+(vue.numIndex+1)+".jpg"; */
+        let index = 0;
+        let str = null;
+        let child = null;
+        let imgId = null;
+        let fileName = null;
+        let fielId = obj.FileId;
+        var a = ['20200810CL8454164','20200810JT8454189']
+        let imgUrl = "data:image/jpeg;base64," + obj.Base64;
+        
+        if(Par.imgData.length == 0){
+            Par.nodeName = a[0] 
         }else{
-            //Par.nodeName = obj.FileName;	
+            Par.nodeName = a[1]    
+        }
+
+        if(Par.scanType==1||Par.scanType=='1'){
+
             fileName = obj.FileName;
+            index = Util.addTypeNum(Par.nodeId);
+            imgId = Par.nodeId+''+Par.imgData[index].typeNum;
+
+        }else if(Par.scanType==2||Par.scanType=='2'){
+            //Par.nodeName = obj.FileName;	
+			/* let img = new Image();
+            img.src = imgUrl;
+			let canvas = document.createElement("canvas");
+            img.onload = function(){
+                canvas.width = img.width;
+                canvas.height = img.height;
+                let ctx = canvas.getContext("2d");
+	
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+
+                var dataImg = ctx.getImageData(0,0,img.width, img.height);
+                window.console.log(dataImg,dataImg.width,dataImg.height);
+                async function getResult (){
+                    return await new Promise().resolve(jsQR(dataImg.data, dataImg.width, dataImg.height,{inversionAttempts: "dontInvert"}));
+                }
+                const code = getResult();
+                window.console.log(code);
+                if(code!=null){
+                    index = Util.addTypeNum(Par.nodeId);
+                    imgId = code+''+Par.imgData[index].typeNum;
+                }
+            } */
+
+            
+           let flag = false;
+            if(Par.imgData.length == 0){
+                
+                index = 0;
+                Par.nodeId = '10'+Par.imgData.length;
+                str = {'id':Par.nodeId,'name':Par.nodeName,'typeNum':0,'typeName':Par.nodeName,"open":true,children:[]};
+                Par.imgData.push(str);
+            }else {
+                for(let o=0;o<Par.imgData.length;o++){
+                    
+                    if(Par.imgData[o].typeName == Par.nodeName){
+                        flag = true;
+                        break;
+                    }
+                }
+                if(!flag){
+                    Par.nodeId = '10'+Par.imgData.length;
+                    str = {'id':Par.nodeId,'name':Par.nodeName,'typeNum':0,'typeName':Par.nodeName,"open":true,children:[]};
+                    Par.imgData.push(str);
+                }
+                
+            }
+            
+            index = Util.addTypeNum(Par.nodeId);
+            imgId = Par.nodeId +''+ Par.imgData[index].typeNum;
+            fileName = Par.nodeName+'_'+Par.imgData[index].typeNum;
         }
         
         Par.curImgIndex++;
-        Par.uploadCount++;
-        let index = Util.addTypeNum(Par.nodeId);
-        let imgId = Par.nodeId+''+Par.imgData[index].typeNum;
-        let fielId = obj.FileId;
-        let imgUrl = "data:image/jpeg;base64," + obj.Base64;
-        let child = {'id': imgId,'name':fileName,'imageSrc':imgUrl,'fielId':fielId,'imgName':fileName,'isUplaod':false,'curImgIndex':Par.curImgIndex,'show':true};
+        Store.commit('changeImgCount','+');
+        Store.commit('changeUploadImgCount','+');
         
+        child = {'id': imgId,'name':fileName,'imageSrc':imgUrl,'fielId':fielId,'imgName':fileName,'isUplaod':false,'curImgIndex':Par.curImgIndex,'show':true};
         Par.uploadImageArr.push(child);//存放要上传的图片
         Par.imgData[index].children.push(child);
 
         Par.ticketNodes[0].children[index] = Par.imgData[index];
-        $.fn.zTree.init($("#treeDemo"), Par.setting, Par.ticketNodes);
-        Store.commit('changeImgCount','+');
-        Store.commit('changeUploadImgCount','+');
         Par.imgViewArr.push({'pId':'p-'+index,"cId":'c-'+(Par.imgData[index].children.length-1),'type':'s'});
+        Util.reloadTree();
 
     },
     showBigImgFromActive(obj,v){
@@ -149,7 +211,7 @@ const Util = {
         {
             imgUrl = 'data:image/jpeg;base64,'+obj.Base64;
         }else{
-             v(imgUrl);
+            v(imgUrl);
         }
         
     },
@@ -235,19 +297,19 @@ const Util = {
                      }
                  }
             });	 */
-        }/* else if(vue.scanType==2){
+        }else if(Par.scanType==2){
             /* var bussArr = vue.bussArr;
             for(let s=0;s<bussArr.length;s++){
                 var bussArrChild = bussArr[s].children
                 for(let k=0;k<bussArrChild.length;k++){
                     if(bussArrChild[k].fileId==fileId){
                         bussArrChild[k].isUpload = flag;
-                        bussArrChild[k].imgTip = type;
+                        //bussArrChild[k].imgTip = type;
                     }
                 }
-            } 
-        } */
-        
+            }  */
+            window.console.log(1);
+        }
         
     },
     getFielId : function() {
@@ -341,7 +403,7 @@ const Util = {
     },
     getRequest : function(url,callBack)
     {
-        vueObj.http.get(`http://${Par.baseUrl}${url}`).then((res)=>{
+        vueObj.http.get(`${Par.baseUrl}${url}`).then((res)=>{
             callBack(res);
         },(res)=>{
             callBack(res);
@@ -349,7 +411,7 @@ const Util = {
 
     },
     postRequest : function(url,Parm,callBack){
-        vueObj.http.post(`http://${Par.baseUrl}${url}`,Parm,{emulateJSON: true}).then((res)=>{
+        vueObj.http.post(`${Par.baseUrl}${url}`,Parm,{emulateJSON: true}).then((res)=>{
             callBack(res);
         },(res)=>{
             callBack(res);
@@ -357,7 +419,7 @@ const Util = {
 
     },
     deleteRequest : function(url,Parm,callBack){
-        vueObj.http.delete(`http://${Par.baseUrl}${url}`,Parm).then((res)=>{
+        vueObj.http.delete(`${Par.baseUrl}${url}`,Parm).then((res)=>{
             callBack(res);
         },(res)=>{
             callBack(res);
@@ -365,11 +427,10 @@ const Util = {
 
     },
     isNullStr(str){
-        return str==null||str=='null'?'':str;
+        return str==null||str=='null'||str==''?'':str;
     },
-    drawPicture(vueO,obj,fileSize){
-        vue = vueO;
-        Par.uploadImgCount++;
+    drawPicture(obj,fileSize){
+
         let src = window.URL.createObjectURL(obj);
         let dataURL = null;
         let img = new Image();
@@ -406,33 +467,37 @@ const Util = {
 
             Par.imgViewArr.push({'pId':'p-'+index,"cId":'c-'+(Par.imgData[index].children.length-1),'type':'i'});
             Par.ticketNodes[0].children[index] = Par.imgData[index];
-            vueO.$store.commit('changeImgCount','+');
-            vueO.$store.commit('changeUploadImgCount','+');
-            vueO.$store.state.initImportCount = vueO.$store.state.uploadImgCount;
+            Store.commit('changeImgCount','+');
+            Store.commit('changeUploadImgCount','+');
+            Store.state.initImportCount = Store.state.uploadImgCount;
 
             Util.reloadTree();
+            Util.vue.computeScrollBar();
         }
         
     },
     /*更新树节点*/
     initTreeNode : function(){
 
-        let bool = false;
-        let arr = Par.ticketNodes[0].children;
-        /*禁止使用 find 函数 */
-        for(let i=0;i<arr.length;i++){
-            if(arr[i].name =='其它'){
-                bool = true;
-                break;
+        if(Par.scanType == 1){
+
+            let bool = false;
+            let arr = Par.ticketNodes[0].children;
+            /*禁止使用 find 函数 */
+            for(let i=0;i<arr.length;i++){
+                if(arr[i].name =='其它'){
+                    bool = true;
+                    break;
+                }
             }
-        }
-        if(!bool){
-            var nodeId = 10+''+Par.ticketNodes[0].children.length;
-            Par.nodeId = nodeId;
-            Par.nodeName = '其它';
-            var obj = {id:nodeId,name:'其它','typeNum':0,'typeName':'其它',"open":true,children:[]};
-            Par.imgData.push(obj);
-            Par.ticketNodes[0].children.push(obj);
+            if(!bool){
+                var nodeId = 10+''+Par.ticketNodes[0].children.length;
+                Par.nodeId = nodeId;
+                Par.nodeName = '其它';
+                var obj = {'id':nodeId,'name':'其它','typeNum':0,'typeName':'其它',"open":true,children:[]};
+                Par.imgData.push(obj);
+                Par.ticketNodes[0].children.push(obj);
+            }
         }
         
         $.fn.zTree.init($("#fileDemo"), Par.setting, Par.fileNodes);
@@ -540,25 +605,37 @@ const Util = {
                     break;
                 }
             }            
-
+            
             Util.reloadDataByDelete(arr,"F");
         }
 
-        if(arr.length > 0 && type=="I"){
-            arr.find((k,i)=>{
-                k.children.find((s,j)=>{
-                    Par.pickImage.find((o)=>{
-                        
-                        if(s.fielId == o){
-                            k.typeNum--;
-                            if(k.isUpload == false){
-                                this.$store.commit('changeUploadImgCount','-');
+        if(a.length > 0 && type=="I"){
+            
+            let data = Par.imgData;
+            for(let j=0;j<data.length;j++){
+                let child = data[j].children;
+                for(let o=0;o<child.length;o++){
+                    for(let s=0;s<a.length;s++){
+                        if(child[o].fielId == a[s]){
+
+                            if(!Par.imgData[j].children[o].isUpload){
+                                Store.commit('changeUploadImgCount','-');
                             }
-                            Par.imgData[i].children.splice(j,1);
+
+                            Par.imgData[j].typeNum-=1;
+                            if(Par.imgData[j].typeNum == 0){
+                                Par.imgData.splice(j,1);
+                            }else{
+                                Par.imgData[j].children.splice(o,1);
+                            }
+                            break;
                         }
-                    })
-                })
-            })
+                    }
+                }
+            }
+            a.splice(0,1)
+            Par.ticketNodes[0].children = Par.imgData;
+            Util.reloadDataByDelete(a,"I");
         }
         Util.reloadTree();
     },
@@ -574,20 +651,17 @@ const Util = {
         return index;
     },
     uploadDataFromServer(arr,arr1){
-        
+
         if(arr.length > 0 &&arr1.length > 0){
 
             arr.find((i)=>{
-                if(i.name!='附件'){
-                    window.console.log(i.name)
-                    if(i.name=='其它'){
-                        Par.nodeId = i.id;
-                    }
-                    let str = {'typeNum':i.children.length,'typeName':i.name,'children':[],'open':true,'id':i.id,name:i.name};
-                    Par.imgData.push(str);
+                    
+                if(i.name=='其它'){
+                    Par.nodeId = i.id;
                 }
-
-            })
+                let str = {'typeNum':i.children.length,'typeName':i.name,'children':[],'open':true,'id':i.id,name:i.name};
+                Par.imgData.push(str);
+            });
             
             let imgData = Par.imgData;
             for(let k=0;k<imgData.length;k++){
@@ -598,7 +672,7 @@ const Util = {
                         Par.curImgIndex++;
                         Store.commit('changeImgCount','+');
                         
-                        Par.imgData[k].children.push({'imageSrc':arr1[o].url,'fielId':arr1[o].fileId,'imgName':arr1[o].fileName,name:arr1[o].fileName,'show':'true','curImgIndex':Par.curImgIndex,'isUpload':true,'imgTip':'imgSucTip'});
+                        Par.imgData[k].children.push({'imageSrc':Par.baseUrl+arr1[o].url,'fielId':arr1[o].fileId,'imgName':arr1[o].fileName,name:arr1[o].fileName,'show':'true','curImgIndex':Par.curImgIndex,'isUpload':true,'imgTip':'imgSucTip'});
                         Par.imgViewArr.push({'pId':'p-'+k,"cId":'c-'+(Par.imgData[k].children.length-1),'type':'u'});//存储图片 查看大图时使用
                     }
                 }
@@ -615,7 +689,7 @@ const Util = {
                 if(k.type=='555'||k.type=='666'||k.type=='777'||k.type=='888'||k.type=='999'){
                     Par.fileListData.push({'fileId':k.fileId,'fileName':k.fileName,'fileIcon':fileIcon,'id':k.fileId,'name':k.fileName});
                 }else if(k.type=='102'){
-                    Par.ticketListData.push({'fileId':k.fileId,'fileName':k.fileName,'fileSrc':'http://47.92.211.214:8080'+k.surl});
+                    Par.ticketListData.push({'fileId':k.fileId,'fileName':k.fileName,'fileSrc':Par.baseUrl+k.surl});
                 }
             });
             Par.fileNodes[0].children = Par.fileListData;
@@ -785,9 +859,7 @@ const Util = {
                         id = id.substring(id.lastIndexOf('/'),id.length);
 
                         Par.uploadFileArr[k].state = 1;
-                        let str = {'fileId':id,'fileName':obj[k].fileName,'type':555,'id':id,'name':obj[k].fileName};
-                        Par.fileListData.push(str);
-                        window.console.log(str);
+                        let str = {'fileId':id,'fileName':obj[k].fileName,'type':555,'id':id,'name':obj[k].fileName,'fileIcon':Util.getFileTypeByName(obj[k].fileName)};
 
                         Par.fileNodes[0].children.push(str);
                         $.fn.zTree.init($("#fileDemo"), Par.setting, Par.fileNodes); 
@@ -901,14 +973,14 @@ const Util = {
                     if(e.deltaY > 0){
                         
                         if((top + height) < obj.clientHeight){
-                            top+=20;
+                            top+=30;
                         } else{
                             top = (obj.clientHeight - height);
                         }
                         
                     }else if(e.deltaY < 0){
                        
-                        top-= 20;
+                        top-=30;
                         if(top < 0){
                             top = 0;
                         }
